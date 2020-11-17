@@ -1,10 +1,61 @@
+<!-- TOC -->
+
+- [概述](#概述)
+- [版本](#版本)
+- [介绍](#介绍)
+    - [init](#init)
+    - [clone](#clone)
+    - [config](#config)
+    - [remote](#remote)
+    - [add](#add)
+    - [rm](#rm)
+    - [mv](#mv)
+    - [reset](#reset)
+    - [clean](#clean)
+    - [stash](#stash)
+    - [status](#status)
+    - [log](#log)
+    - [show](#show)
+    - [shortlog](#shortlog)
+    - [diff](#diff)
+    - [branch](#branch)
+    - [checkout](#checkout)
+    - [commit](#commit)
+    - [revert](#revert)
+    - [merge](#merge)
+    - [rebase](#rebase)
+    - [cherry-pick](#cherry-pick)
+    - [tag](#tag)
+    - [push](#push)
+    - [fetch](#fetch)
+    - [pull](#pull)
+    - [bisect](#bisect)
+    - [reflog](#reflog)
+    - [fsck](#fsck)
+    - [grep](#grep)
+    - [blame](#blame)
+    - [gc](#gc)
+    - [submodule](#submodule)
+- [配置](#配置)
+- [.gitignore](#gitignore)
+- [我的 alias 设置](#我的-alias-设置)
+- [相关资料](#相关资料)
+
+<!-- /TOC -->
+
 ## 概述
 
-git 是一个强大的分布式版本管理工具，也是计算机专业找工作的必备技能之一。关于 git 的教程网上已经有很多很多，其大致工作流程如下图，此处不再赘述。
+git 是一个开源的分布式版本控制系统，也是计算机专业找工作的必备技能之一，其最初由 Linux Torvalds (Linux 之父) 创造，于 2005 年发布。
+
+关于 git 的教程网上已经有很多很多，其大致工作流程如下图：
 
 ![](./img/workload.png)
 
-本文主要介绍常用的 30 条 git 命令，希望能够大家使用 git 带来一些帮助。
+其大致命令如下图：
+
+![](./img/cheatsheet.png)
+
+本文主要介绍常用的 33 条 git 命令，希望能够大家使用 git 带来一些帮助。
 
 由于作者能力有限，描述必然会有纰漏，欢迎提交 PR、创建 Issue 进一步交流。
 
@@ -16,38 +67,6 @@ git version 2.17.2 (Apple Git-113)
 
 ## 介绍
 以下每条命令也可使用`git <command> -h`来查看对应官方文档。
-
-### 目录
-- [init](#init)
-- [clone](#clone)
-- [config](#config)
-- [remote](#remote)
-- [add](#add)
-- [rm](#rm)
-- [mv](#mv)
-- [reset](#reset)
-- [stash](#stash)
-- [status](#status)
-- [log](#log)
-- [shortlog](#shortlog)
-- [diff](#diff)
-- [branch](#branch)
-- [checkout](#checkout)
-- [commit](#commit)
-- [revert](#revert)
-- [merge](#merge)
-- [rebase](#rebase)
-- [cherry-pick](#cherry-pick)
-- [tag](#tag)
-- [push](#push)
-- [fetch](#fetch)
-- [pull](#pull)
-- [bisect](#bisect)
-- [reflog](#reflog)
-- [grep](#grep)
-- [blame](#blame)
-- [gc](#gc)
-- [submodule](#submodule)
 
 ### init
 
@@ -115,10 +134,10 @@ add 命令支持添加单个文件，带有通配符路径的所有对应文件�
 ```
 // 提交被修改(modified)和被删除(deleted)文件，不包括新文件(new)
 git add -u
-// 提交新文件(new)和被修改(modified)文件，不包括被删除(deleted)文件
+// 提交当前目录下的所有变化
 git add .
 // 提交所有变化
-git add -A
+git add -A 
 ```
 
 ### rm
@@ -178,6 +197,23 @@ git reset --hard <commitId>/<branch>
 git reset (--mixed) HEAD
 ```
 
+### clean
+
+用来从工作目录中删除所有没有 tracked 过的文件，git clean 经常和 git reset --hard 一起结合使用。记住 reset 只影响被 track 过的文件，所以需要 clean 来删除没有 track 过的文件。结合使用这两个命令能让工作目录完全回到一个指定 <commit> 的状态，具体可参考此[博客](https://blog.csdn.net/weixin_44137575/article/details/108142088)。
+
+```
+// 展示哪些文件会被删除，但不真正删除文件
+git clean -n
+// 删除指定目录（默认当前目录）下所有没有 track 过的文件，但不会删除 .gitignore 文件里面指定的文件夹和文件
+git clean -f (<path>)
+// 删除指定目录（默认当前目录）下所有没有 track 过的文件，包括 .gitignore 文件里面指定的文件夹和文件
+git clean -fx (<path>)
+// 删除指定目录（默认当前目录）下所有没有被 track 过的文件和文件夹，但不会删除 .gitignore 文件里面指定的文件夹和文件
+git clean -df (<path>)
+// 删除指定目录（默认当前目录）下所有没有被 track 过的文件和文件夹，包括 .gitignore 文件里面指定的文件夹和文件
+git clean -dfx (<path>)
+```
+
 ### stash
 
 常用来保存和恢复工作进度。注意该命令只对被 git 跟踪的文件有效。这是一个非常有用的命令，具体相关用法可查看此[博客](https://blog.csdn.net/andyzhaojianhui/article/details/80586695)。
@@ -226,6 +262,15 @@ git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(
 git log --grep <key>
 // 从代码中查找与关键字相关的 commit
 git log -S <key>
+```
+
+### show
+
+用来显示某个 commit 的具体提交信息和元信息。
+```
+git show
+git show <commitId>
+git show <branchName>
 ```
 
 ### shortlog
@@ -477,6 +522,14 @@ git bisect reset
 git reflog
 ```
 
+### fsck
+
+常用来恢复本地错误操作。只要是对 HEAD 进行操作的错误，一般情况下 reflog 都能够恢复，然而有些错误并不会对 HEAD 进行操作，例如将部分代码 stash 之后又不小心 drop 或 clear 掉了，那么此时 HEAD 并没有发生变化，reflog 对此类错误是无能为力的，这个时候 fsck 就可以派上用场了，该命令会更加底层，即直接检查 git 中的 blob，tree 和 commit 对象并找到悬空的对象，找到后即可以通过 `git show <commitId>` 来查看该 commit 是否是被误操作删掉的 commit，如果是的话知道这个 commitId 无论如何都可以恢复了，不论用 merge 还是 cherry-pick 还是 checkout 等，可以参考一个恢复误删 stash 数据的[修复实例](https://www.jianshu.com/p/4cd5983586b2)，也可以进一步参考[官网实例](https://git-scm.com/book/zh/v2/Git-%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86-%E7%BB%B4%E6%8A%A4%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%81%A2%E5%A4%8D#_data_recovery)。
+
+```
+git fsck
+```
+
 ### grep
 
 用于检索文件中的文本内容，更多用法可参考此[博客](https://www.softwhy.com/article-8652-1.html)。
@@ -509,6 +562,30 @@ git gc
 
 用于管理多个子项目。该命令允许一个 git 仓库作为另一个 git 仓库的子目录，并且保持父项目和子项目相互独立。具体用法可参考此[博客](http://www.ayqy.net/blog/%E7%90%86%E8%A7%A3git-submodules/)。
 
+## 配置
+
+Git 自带一个 git config 的工具来帮助设置控制 Git 外观和行为的配置变量。这些变量存储在三个不同的位置：
+
+/etc/gitconfig 文件: 包含系统上每一个用户及他们仓库的通用配置。如果使用带有 --system 选项的 git config 时，它会从此文件读写配置变量。
+
+~/.gitconfig 文件：只针对当前用户。可以传递 --global 选项让 Git 读写此文件。
+
+当前使用仓库的 Git 目录中的 config 文件（就是 .git/config）：针对该仓库。
+
+每一个级别覆盖上一级别的配置，所以 .git/config 的配置变量会覆盖 /etc/gitconfig 中的配置变量。
+
+## .gitignore
+
+.gitignore 文件可能从字面含义也不难猜出：这个文件里配置的文件或目录，会自动被 git 所忽略，不纳入版本控制。
+
+在日常开发中，我们的项目经常会产生一些临时文件，如编译 Java 产生的 *.class 文件，又或是 IDE 自动生成的隐藏目录（Intellij 的 .idea 目录、Eclipse 的 .settings 目录等）等等。这些文件或目录实在没必要纳入版本管理。在这种场景下，你就需要用到 .gitignore 配置来过滤这些文件或目录。
+
+配置的规则很简单，也没什么可说的，看几个例子，自然就明白了。
+
+这里推荐一下 Github 的[开源项目](https://github.com/github/gitignore)。在这里，你可以找到很多常用的模板，如：Java、Nodejs、C++ 的 .gitignore 模板等等。
+
+一般有两个级别的 .gitignore 文件：一个是全局的 ~/.gitignore 文件，另一个是仓库目录下的 .gitignore 文件。前者会覆盖后者的过滤条件，因此一个项目具体有哪些文件会被 git 忽略与两个文件都有关。我们可以将 .idea，*.class 这种常有的过滤目录添加到全局的 ~/.gitignore 中，这样子就不用在每个仓库的 .gitignore 中再次添加了。
+
 ## 我的 alias 设置
 ```
 a = add 
@@ -519,9 +596,7 @@ ap = add -p
 bm = blame
 br = branch -vv
 bra = branch -a
-brr = branch -r
-brd = branch -d
-brdd = branch -D
+brd = branch -D
 brf = branch -f
 brm = branch -m
 bs = bisect
@@ -538,6 +613,12 @@ cfsl = config --system --list
 cl = clone
 clb = clone --single-branch --branch
 cld = clone --depth
+cn = clean
+cnn = clean -n
+cnf = clean -f
+cnfx = clean -fx
+cndf = clean -df
+cndfx = clean -dfx
 cm = commit
 cmm = commit -am
 cmem = commit --allow-empty -m
@@ -556,8 +637,10 @@ dfc = diff --cached
 dfh = diff HEAD
 fh = fetch
 fha = fetch --all
+fc = fsck
 ge = grep -n 
 gec = grep -c 
+it = init
 lg = log
 lgo = log --oneline
 lgga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
@@ -577,6 +660,7 @@ pst = push --tags
 rb = rebase
 rba = rebase --abort
 rbc = rebase --continue
+rbi = rebase -i
 rbo = rebase --onto
 rf = reflog
 rmc = rm --cached
@@ -615,6 +699,7 @@ shsh = stash show
 shshp = stash show -p
 shsa = stash save
 shsak = stash save --keep-index
+so = show
 sl = shortlog
 slsn = shortlog -s -n
 st = status	--show-stash
@@ -624,7 +709,8 @@ tga = tag -a
 tgd = tag -d
 ```
 
-## 资料
-以下仓库是两个非常有趣的 git 教程，十分推荐。
+## 相关资料
 * [githug](https://github.com/Gazler/githug)
 * [learnGitBranching](https://github.com/pcottle/learnGitBranching)
+* [Git原理入门解析](https://mp.weixin.qq.com/s?__biz=MzI4Njc5NjM1NQ==&mid=2247489338&idx=2&sn=6fdd8968003b8f59d43c09b72894e877&chksm=ebd62816dca1a1003dcefb6dae8296dd08924426fa6f12d09b8695922007fcb9bfa342c35bd1&scene=21#wechat_redirect)
+* [Git 从入门到精通，这一篇就够了](https://mp.weixin.qq.com/s/b8bQW2N5VC-qmGD4dTiwKQ)
