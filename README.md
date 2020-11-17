@@ -115,10 +115,10 @@ add 命令支持添加单个文件，带有通配符路径的所有对应文件�
 ```
 // 提交被修改(modified)和被删除(deleted)文件，不包括新文件(new)
 git add -u
-// 提交新文件(new)和被修改(modified)文件，不包括被删除(deleted)文件
+// 提交当前目录下的所有变化
 git add .
 // 提交所有变化
-git add -A
+git add -A 
 ```
 
 ### rm
