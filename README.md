@@ -358,7 +358,7 @@ git commit --amend
 // 在不增加一个新 commit 的情况下将新修改的代码追加到前一次的 commit 中，不需要再修改 message 信息
 git commit --amend --no-edit
 // 提交一次没有任何改动的空提交，常用于触发远程 ci
-git commit ----allow-empty -m "message"
+git commit --allow-empty -m "message"
 // 修改 commit 时间
 git commit -m "message" --date=" Wed May 27 00:35:36 2020 +0800"
 ```
