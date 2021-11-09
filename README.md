@@ -3,39 +3,39 @@
 - [概述](#概述)
 - [版本](#版本)
 - [介绍](#介绍)
-    - [init](#init)
-    - [clone](#clone)
-    - [config](#config)
-    - [remote](#remote)
-    - [add](#add)
-    - [rm](#rm)
-    - [mv](#mv)
-    - [reset](#reset)
-    - [clean](#clean)
-    - [stash](#stash)
-    - [status](#status)
-    - [log](#log)
-    - [show](#show)
-    - [shortlog](#shortlog)
-    - [diff](#diff)
-    - [branch](#branch)
-    - [checkout](#checkout)
-    - [commit](#commit)
-    - [revert](#revert)
-    - [merge](#merge)
-    - [rebase](#rebase)
-    - [cherry-pick](#cherry-pick)
-    - [tag](#tag)
-    - [push](#push)
-    - [fetch](#fetch)
-    - [pull](#pull)
-    - [bisect](#bisect)
-    - [reflog](#reflog)
-    - [fsck](#fsck)
-    - [grep](#grep)
-    - [blame](#blame)
-    - [gc](#gc)
-    - [submodule](#submodule)
+  - [init](#init)
+  - [clone](#clone)
+  - [config](#config)
+  - [remote](#remote)
+  - [add](#add)
+  - [rm](#rm)
+  - [mv](#mv)
+  - [reset](#reset)
+  - [clean](#clean)
+  - [stash](#stash)
+  - [status](#status)
+  - [log](#log)
+  - [show](#show)
+  - [shortlog](#shortlog)
+  - [diff](#diff)
+  - [branch](#branch)
+  - [checkout](#checkout)
+  - [commit](#commit)
+  - [revert](#revert)
+  - [merge](#merge)
+  - [rebase](#rebase)
+  - [cherry-pick](#cherry-pick)
+  - [tag](#tag)
+  - [push](#push)
+  - [fetch](#fetch)
+  - [pull](#pull)
+  - [bisect](#bisect)
+  - [reflog](#reflog)
+  - [fsck](#fsck)
+  - [grep](#grep)
+  - [blame](#blame)
+  - [gc](#gc)
+  - [submodule](#submodule)
 - [配置](#配置)
 - [.gitignore](#gitignore)
 - [我的 alias 设置](#我的-alias-设置)
@@ -154,7 +154,7 @@ git rm -f <file>
 git rm -f -r .
 ```
 
-用于删除暂存区文件，并将此次删除放入暂存区，但会保留工作区的文件。
+用于删除暂存区文件，并将此次删除放入暂存区，但会保留工作区的文件。可以理解成解除 git 对这些文件的追踪，将他们转入 untracked 状态。
 ```
 git rm --cached <file>
 // 对所有文件进行操作
@@ -258,9 +258,9 @@ git status --ignored
 git log
 git log --oneline
 git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-// 从 commit 信息中查找与关键字相关的 commit
+// 从 commit 信息中查找包含指定字符串的 commit
 git log --grep <key>
-// 从代码中查找与关键字相关的 commit
+// 从更改内容中查找包含指定字符串的 commit ，比如想查找哪些 commit 对代码中名为 <key> 的函数进行了更改
 git log -S <key>
 ```
 
