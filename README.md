@@ -351,6 +351,8 @@ git checkout .
 ```
 // 提交一个描述为 message 的 commit
 git commit -m "message"
+// 提交一个描述为 message 的 commit 并签名（部分开源社区会要求开发者提交的每个 commit 均使用 signoff 签名）
+git commit -s -m "message"
 // 相当于 git add -a 和 git commit -m "message" 两条命令
 git commit -am "message"
 // 在不增加一个新 commit 的情况下将新修改的代码追加到前一次的 commit 中，会弹出一个编辑器界面重新编辑 message 信息
@@ -620,10 +622,10 @@ cnfx = clean -fx
 cndf = clean -df
 cndfx = clean -dfx
 cm = commit
-cmm = commit -m
-cmme = commit --allow-empty -m
-cma = commit --amend
-cman = commit --amend --no-edit
+cmm = commit -s -m
+cmme = commit -s --allow-empty -m
+cma = commit -s --amend
+cman = commit -s --amend --no-edit
 co = checkout
 cob = checkout -b
 cod = checkout -- 
