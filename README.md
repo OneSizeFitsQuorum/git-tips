@@ -1,718 +1,646 @@
-<!-- TOC -->
+# Git 日常开发手册
 
-- [概述](#概述)
-- [版本](#版本)
-- [介绍](#介绍)
-  - [init](#init)
-  - [clone](#clone)
-  - [config](#config)
-  - [remote](#remote)
-  - [add](#add)
-  - [rm](#rm)
-  - [mv](#mv)
-  - [reset](#reset)
-  - [clean](#clean)
-  - [stash](#stash)
-  - [status](#status)
-  - [log](#log)
-  - [show](#show)
-  - [shortlog](#shortlog)
-  - [diff](#diff)
-  - [branch](#branch)
-  - [checkout](#checkout)
-  - [commit](#commit)
-  - [revert](#revert)
-  - [merge](#merge)
-  - [rebase](#rebase)
-  - [cherry-pick](#cherry-pick)
-  - [tag](#tag)
-  - [push](#push)
-  - [fetch](#fetch)
-  - [pull](#pull)
-  - [bisect](#bisect)
-  - [reflog](#reflog)
-  - [fsck](#fsck)
-  - [grep](#grep)
-  - [blame](#blame)
-  - [gc](#gc)
-  - [submodule](#submodule)
-- [配置](#配置)
-- [.gitignore](#gitignore)
-- [我的 alias 设置](#我的-alias-设置)
-- [相关资料](#相关资料)
+面向日常开发的中文 Git 手册，以 **Git 2.51+** 为内容基线。先理解修改流向，再按任务查找命令；不必记住每个子命令的所有参数。
 
-<!-- /TOC -->
+分支切换使用 `switch`，文件恢复使用 `restore`，配置使用 `config get/set/list/unset`，临时保存工作使用 `stash push`。示例在 Git 2.56.0 验证。
 
-## 概述
+- [理解修改流向](#理解修改流向)
+- [开始使用](#开始使用)
+- [查看与提交](#查看与提交)
+- [分支开发](#分支开发)
+- [远程协作](#远程协作)
+- [撤销与恢复](#撤销与恢复)
+- [进阶操作](#进阶操作)
+- [推荐别名](#推荐别名)
+- [命令索引](#命令索引)
+- [中文速查表](#中文速查表)
+- [参考资料](#参考资料)
 
-git 是一个开源的分布式版本控制系统，也是计算机专业找工作的必备技能之一，其最初由 Linux Torvalds (Linux 之父) 创造，于 2005 年发布。
+示例使用常见 shell 语法。`<url>`、`<commit>` 等表示需要替换的值，不要连尖括号一起输入；`main`、`feature/login`、`README.md` 等是示例名称，请按实际仓库调整。代码块中的不同操作通常是备选做法，不是要从头到尾全部执行。`--` 用于把文件路径与选项、提交名分开。
 
-关于 git 的教程网上已经有很多很多，其大致工作流程如下图：
+## 理解修改流向
 
-![](./img/workload.png)
+Git 的提交是一份快照。你编辑的是**工作区**，用 `add` 选择放入**暂存区**的内容，再用 `commit` 生成**本地提交**。同一文件可以同时有已暂存和未暂存的修改，所以提交前需要分别查看两种差异。
 
-其大致命令如下图：
+分支是指向提交的可移动引用。通常 `HEAD` 指向当前分支，提交后分支随之向前移动。`origin/main` 是本地保存的远程分支记录，只有获取远程信息后才会更新，不能把它当成服务器的实时状态。
 
-![](./img/cheatsheet.png)
+![修改流向：add 将工作区内容放入暂存区，commit 生成本地提交；restore --staged 仅取消暂存，restore 会覆盖工作区；fetch 获取远程记录，push 发布本地提交。](img/workflow.svg)
 
-本文主要介绍常用的 33 条 git 命令，希望能够大家使用 git 带来一些帮助。
+`fetch` 只取回远程对象和引用，不直接改写工作区；`merge` 或 `rebase` 才把另一段历史整合到当前分支。`push` 则把本地提交发布到远程。理解这几个边界，比记忆一组“同步代码”的组合命令更有用。
 
-由于作者能力有限，描述必然会有纰漏，欢迎提交 PR、创建 Issue 进一步交流。
+## 开始使用
 
-如果看完之后有所收获，求求给个 Star 以表支持。😊
+### 创建或克隆仓库
 
-## 版本
+新项目先初始化，已有项目直接克隆，两者选其一：
 
-git version 2.17.2 (Apple Git-113)
-
-## 介绍
-以下每条命令也可使用`git <command> -h`来查看对应官方文档。
-
-### init
-
-可以使用`git init`在当前目录创建 git 仓库，也可使用`git init <path>`在 path 路径下创建目录并创建 git 仓库。注意有个`--bare`参数可以生成一般作为远程仓库的裸仓库，其不包含工作区，具体可参考此[博客](https://www.jianshu.com/p/5b7ff91c5338)。
-
-### clone
-
-可以直接使用`git clone <url>`来克隆对应仓库代码，本地默认存储目录为当前目录下的仓库同名目录，也可在 url 之后指定本地的存储目录名。例如：
-```
-git clone <url>
-git clone <url> <dir_name>
+```sh
+git init -b main my-project
+git clone <url> my-project
 ```
 
-具体的 url 有四种协议格式，分别是 local，git，ssh，https 协议，具体区别可参考此[博客](https://juejin.im/post/6844903536749182989)和[博客](https://cloud.tencent.com/developer/article/1347791)。
+进入项目目录后再执行后续操作。`clone` 默认创建名为 `origin` 的远程关联。远程地址常见 HTTPS 和 SSH 两种，身份认证由服务端和本机凭据配置决定；提交里的姓名和邮箱不负责登录。
 
-此外在克隆某些存在较大文件的项目时，可以使用`git clone --depth=n <url>`来下载该项目 master 分支最近 n 次 commit 的相关文件和引用；使用`git clone --single-branch --branch=dev <url>`来下载该项目 dev 分支的相关文件和引用。这样可以大大加快克隆的速度。
+只需要某个分支的近期历史时，可以浅克隆：
 
-### config
-
-通常只用来设置邮箱和用户名。注意有三个级别`local`，`global`和`system`，分别对应项目级别，用户级别和机器级别。默认不指定是`local`级别，具体区别可参考此[博客](https://www.daixiaorui.com/read/240.html)。
-```
-git config user.email "TXYPotato@gmail.com"
-git config user.name "LebronAl"
+```sh
+git clone --depth=10 --branch main <url> my-project
+# 已有浅克隆需要完整历史时
+git fetch --unshallow
 ```
 
-此外，在单机配置多个 git 账号时，除了在目录`~/.ssh/`下生成 config 文件外，一般也需要在对应仓库重新设置非全局的正确用户名和邮箱以避免身份混淆，具体配置方式可参考此[博客](http://www.chenyp.com/2017/08/11/multiple-git-account/)。
+`--depth` 限制历史深度，并默认只克隆一个分支，不代表只下载“大文件的最近版本”。浅历史会限制追溯、变基和二分排错，普通开发优先使用完整克隆。
 
-### remote 
+### 设置身份与查看配置
 
-通常用来管理上游仓库，可以通过`git remote -v`来查看相关信息，其相关命令如下：
-```
-// 添加远程仓库关联
-git remote add <name> <url>
-// 删除远程仓库关联
-git remote remove <name>
-// 更名远程仓库关联
-git remote rename <old_name> <new_name>
-// 显示某个远程仓库的信息
-git remote show <name>
-// 更新远程仓库 url
-git remote set-url <name> <new_url>
-```
+首次使用设置用户级身份，多账号时在具体仓库覆盖：
 
-此外，remote 命令也可以为一个远程仓库设置多个 url 地址，这样一次 push 就可以同时对该远程仓库的所有 url 进行推送，比如同时往 github 和 gitee 上推送，具体可参考此[博客](https://www.cnblogs.com/hsd1727728211/p/5331651.html)，相关命令如下：
-```
-git remote set-url --add <name> <url>
-git remote set-url --delete <name> <url>
+```sh
+git config set --global user.name "Your Name"
+git config set --global user.email "you@example.com"
+# 仅对当前仓库生效
+git config set --local user.email "you@company.example"
+# 查询最终生效值与来源
+git config get user.email
+git config list --show-origin --show-scope
+# 删除当前仓库的覆盖值，重新使用上层配置
+git config unset --local user.email
 ```
 
-此外，remote 命令也可以跟踪远程的所有分支和清理无效的远程分支跟踪，具体可参考此[博客](https://www.jianshu.com/p/884ff6252be5)：
-```
-// 本地创建远程追踪分支
-git remote update <name>
-// 本地清理无效的远程追踪分支
-git remote prune <name>
-// 查看无效的远程追踪分支
-git remote prune --dry-run <name>
-```
+常用配置层级是 system → global → local，后者覆盖前者。写配置时不指定范围默认写入当前仓库；查询时会合并各层配置。全局配置通常保存在 `~/.gitconfig` 或 `$XDG_CONFIG_HOME/git/config`，仓库配置通常在 `.git/config`，用 `--show-origin` 查看实际位置比猜文件路径可靠。
 
-### add
+### 忽略生成文件
 
-用来从工作区向暂存区添加变更。可以使用`git add -e <file>`或者`git add -p <file>`来交互性的添加工作区文件的部分变更到暂存区中去，具体可查看此[博客](https://www.cnblogs.com/zqb-all/p/13020293.html)。
+把团队共同忽略的规则写进仓库根目录的 `.gitignore` 并提交：
 
-add 命令支持添加单个文件，带有通配符路径的所有对应文件和所有文件。添加所有文件对应三种命令，有细微的区别，介绍如下：
-```
-// 提交被修改(modified)和被删除(deleted)文件，不包括新文件(new)
-git add -u
-// 提交当前目录下的所有变化
-git add .
-// 提交所有变化
-git add -A 
+```gitignore
+# 构建目录与日志
+/build/
+*.log
+# 保留一个示例日志；父目录不能同时被排除
+!example.log
 ```
 
-### rm
+`.gitignore` 只影响尚未跟踪的文件。已经提交的文件不会因为新增规则自动退出版本管理。若要停止跟踪，同时保留本地文件：
 
-用于删除工作区文件，并将此次删除放入到暂存区。（注：要删除的文件没有修改过，就是说和当前版本库文件的内容相同。）
-```
-git rm <file>
-```
-
-用于删除工作区和暂存区文件，并将此次删除放入暂存区。（注：要删除的文件已经修改过，就是说和当前版本库文件的内容不同）
-```
-git rm -f <file>
-// 对所有文件进行操作
-git rm -f -r .
+```sh
+git rm --cached -- app.log
+git add .gitignore
+git commit -m "Stop tracking generated log"
 ```
 
-用于删除暂存区文件，并将此次删除放入暂存区，但会保留工作区的文件。可以理解成解除 git 对这些文件的追踪，将他们转入 untracked 状态。
-```
-git rm --cached <file>
-// 对所有文件进行操作
-git rm --cached -r .
-```
+这会在下一次提交中删除仓库里的文件，其他人更新后也会受到影响；历史中的旧内容仍然存在。如果文件含有密钥，仅添加忽略规则或取消跟踪不能清除泄露，需要立即撤换密钥。
 
-更多例子可参考此[博客](https://blog.csdn.net/qq_42780289/article/details/98353792)。
+个人专用规则放在 `.git/info/exclude`，跨项目规则可写入 `~/.config/git/ignore`（默认使用 XDG 配置目录），也可显式设置：
 
-### mv
-
-用于移动或重命名一个文件、目录或软链接。
-```
-git mv <old_file> <new_file>
-```
-相当于`mv old_file new_file`，`git rm old_file`，`git add new_file`这三条命令一起运行，具体可参考此[博客](https://www.cnblogs.com/mf001/p/8663386.html)。
-
-新文件名已经存在，若想强制覆盖则可以使用 -f 参数：
-```
-git mv -f <old_file> <new_file>
+```sh
+git config set --global core.excludesFile ~/.config/git/ignore
+git check-ignore -v -- build/output.txt
 ```
 
-### reset
+同一层规则最后匹配者生效；更深目录的 `.gitignore` 优先于上层文件，仓库内规则优先于 `.git/info/exclude` 和全局忽略文件。排查时用 `check-ignore -v` 查看具体命中的规则。
 
-用于将指定 commit 和 branch 的文件替换暂存区的文件。有三个常用参数，分别是`--hard`，`--soft`，`--mixed`，默认是`--mixed`。具体细节和应用场景可参考此[博客](https://www.jianshu.com/p/c2ec5f06cf1a)。
+## 查看与提交
 
+### 看清即将提交的内容
 
-定义三种动作：
-1. 替换引用的指向，指向新的提交。
-2. 替换暂存区。暂存区内容将和指定的提交内容一样。
-3. 替换工作区。工作区和指定的提交内容一样。
-
-```
-// 执行 1。常用于合并多个 commit，类似于 squash
-git reset --soft [commitId]/<branch>
-// 执行 12。常用于移出暂存区的文件以作为 add 命令的反动作
-git reset (--mixed) <commitId>/<branch>
-// 执行 123。常用于无条件放弃本地所有变更以向远程分支同步
-git reset --hard <commitId>/<branch>
-// 将暂存区的所有改动撤销到工作区
-git reset (--mixed) HEAD
-```
-
-### clean
-
-用来从工作目录中删除所有没有 tracked 过的文件，git clean 经常和 git reset --hard 一起结合使用。记住 reset 只影响被 track 过的文件，所以需要 clean 来删除没有 track 过的文件。结合使用这两个命令能让工作目录完全回到一个指定 <commit> 的状态，具体可参考此[博客](https://blog.csdn.net/weixin_44137575/article/details/108142088)。
-
-```
-// 展示哪些文件会被删除，但不真正删除文件
-git clean -n
-// 删除指定目录（默认当前目录）下所有没有 track 过的文件，但不会删除 .gitignore 文件里面指定的文件夹和文件
-git clean -f (<path>)
-// 删除指定目录（默认当前目录）下所有没有 track 过的文件，包括 .gitignore 文件里面指定的文件夹和文件
-git clean -fx (<path>)
-// 删除指定目录（默认当前目录）下所有没有被 track 过的文件和文件夹，但不会删除 .gitignore 文件里面指定的文件夹和文件
-git clean -df (<path>)
-// 删除指定目录（默认当前目录）下所有没有被 track 过的文件和文件夹，包括 .gitignore 文件里面指定的文件夹和文件
-git clean -dfx (<path>)
-```
-
-### stash
-
-常用来保存和恢复工作进度。注意该命令只对被 git 跟踪的文件有效。这是一个非常有用的命令，具体相关用法可查看此[博客](https://blog.csdn.net/andyzhaojianhui/article/details/80586695)。
-
-```
-// 保存当前工作进度，将工作区和暂存区恢复到修改之前。默认 message 为当前分支最后一次 commit 的 message
-git stash
-// 作用同上，message 为此次进度保存的说明
-git stash save message
-// 显示此次工作进度做了哪些文件行数的变化，此命令的 stash@{num} 是可选项，不带此项则默认显示最近一次的工作进度相当于 git stash show stash@{0}
-git stash show stash@{num}
-// 显示此次工作进度做了哪些具体的代码改动，此命令的 stash@{num} 是可选项，不带此项则默认显示最近一次的工作进度相当于 git stash show stash@{0} -p
-git stash show stash@{num} -p
-// 显示保存的工作进度列表，编号越小代表保存进度的时间越近
-git stash list
-// 恢复工作进度到工作区，此命令的 stash@{num} 是可选项，在多个工作进度中可以选择恢复，不带此项则默认恢复最近的一次进度相当于 git stash pop stash@{0}
-git stash pop stash@{num}
-// 恢复工作进度到工作区且该工作进度可重复恢复，此命令的 stash@{num} 是可选项，在多个工作进度中可以选择恢复，不带此项则默认恢复最近的一次进度相当于 git stash apply stash@{0}
-git stash apply stash@{num}
-// 删除一条保存的工作进度，此命令的 stash@{num} 是可选项，在多个工作进度中可以选择删除，不带此项则默认删除最近的一次进度相当于 git stash drop stash@{0}
-git stash drop stash@{num}
-// 删除所有保存的工作进度
-git stash clear
-```
-此外有时我们只想保存部分文件，可以通过 add 一些不想保存的文件到暂存区去，然后使用`git stash --keep-index`来将工作区的工作进度保存，从而保留暂存区的进度并保存工作区的进度。具体可参考此[博客](https://juejin.im/post/6844903961770606605)。
-
-此外虽然 stash 命令默认不包含未跟踪的文件，但我们可以通过显示声明`-u`的方式来保存未被 git 追踪的文件。即`git stash -u`。
-
-### status
-
-用于显示文件和文件夹在工作区和暂存区的状态。
-```
-git status
-// 展示中包含被忽略的文件
-git status --ignored
-```
-
-### log
-
-用来回顾提交历史。可参考此[文档](https://git-scm.com/book/zh/v2/Git-%E5%9F%BA%E7%A1%80-%E6%9F%A5%E7%9C%8B%E6%8F%90%E4%BA%A4%E5%8E%86%E5%8F%B2)和此[博客](https://www.cnblogs.com/lenomirei/p/8379457.html)。以下只列出几个常用的打印格式：
-```
-git log
-git log --oneline
-git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-// 从 commit 信息中查找包含指定字符串的 commit
-git log --grep <key>
-// 从更改内容中查找包含指定字符串的 commit ，比如想查找哪些 commit 对代码中名为 <key> 的函数进行了更改
-git log -S <key>
-```
-
-### show
-
-用来显示某个 commit 的具体提交信息和元信息。
-```
-git show
-git show <commitId>
-git show <branchName>
-```
-
-### shortlog
-
-用于汇总 git 日志输出。非常人性化的一个命令。
-```
-// 按照用户列出其 commit 的次数以及每次 commit 的注释
-git shortlog
-// 按照 commit 数量从多到少的顺序列出本仓库的贡献者并省略注释
-git shortlog -sn
-```
-
-### diff
-
-用来比较文件之间的不同。具体用法可参考此[博客](https://blog.csdn.net/wq6ylg08/article/details/88798254)。diff 结果的格式可参考此[博客](http://www.ruanyifeng.com/blog/2012/08/how_to_read_diff.html)了解。
-```
-// 查看工作区与暂存区所有文件的变更
+```sh
+git status -sb
 git diff
-// 查看暂存区与最后一次 commit 之间所有文件的变更
 git diff --cached
-// 查看工作区与最后一次 commit 之间所有文件的变更
 git diff HEAD
-// 查看两次 commit 之间的变动
-git diff <commitId>...<commitId>
-// 查看两个分支上最后一次 commit 的内容差别
-git diff <branch>...<branch>
 ```
 
-### branch
+`status -sb` 用简洁格式显示分支及文件状态。文件前两列分别表示暂存区状态、工作区状态，`??` 表示未跟踪。`diff` 比较工作区与暂存区，`diff --cached` 比较暂存区与 `HEAD`，`diff HEAD` 比较工作区与 `HEAD`；这些差异命令默认不会显示未跟踪文件的内容。
 
-用于分支的操作，比如创建分支，查看分支等等。
-```
-// 可以查看本地分支对应的远程分支
-git branch -vv 
-// 查看远程版本库分支列表
-git branch -r
-// 查看所有分支列表，包括本地和远程
-git branch -a
-// 在当前位置新建 name 分支
-git branch <name>
-// 在指定 commit 上新建 name 分支
-git branch <name> <commitId>
-// 强制创建 name 分支，原来的分支会被新建分支覆盖，从而迁移 name 分支指针
-git branch -f <name>
-// 删除 dev 分支，如果在分支中有一些未 merge 的提交则会失败
-git branch -d dev
-// 强制删除 dev 分支
-git branch -D dev
-// 重命名分支
-git branch -m <oldName> <newName>
+### 选择修改并提交
+
+一次提交尽量只解决一个问题。既可以选文件，也可以逐块选择同一文件中的修改：
+
+```sh
+git add -- README.md
+git add -p
+# 确认范围后，也可以暂存整个仓库的新增、修改与删除
+git add -A
+git diff --cached
+git commit -m "Describe the change"
 ```
 
-### checkout
+`add .` 处理当前目录及其子目录，`add -A` 处理整个仓库，`add -u` 只处理已跟踪文件的修改和删除。`add` 只是暂存，不是提交；暂存后继续编辑的内容不会自动进入同一次提交。
 
-用于切换分支或更新工作树文件以匹配索引或指定树中的版本，具体可参考此[博客](https://www.jianshu.com/p/cad4d2ec4da5)。
-```
-// 切换到指定分支
-git checkout <branch>
-// 在当前位置新建分支并切换
-git checkout -b <branch>
-// 在指定 commit 上新建分支并切换
-git checkout -b <branch> <commitId>
-// 切换到指定 v1.2 的标签
-git checkout tags/v1.2
-// 切换到指定 commit
-git checkout <commitId>
-// 基于当前所在分支新建一个赤裸分支，该分支没有任何的提交历史但包含当前分支的所有内容，相当于 git checkout -b <new_branch> 和 git reset --soft <firstCommitId> 两条命令 
-git checkout --orphan <new_branch>
-// 放弃工作区单个文件的变更，默认会从暂存区检出该文件，如果暂存区为空，则该文件会回滚到最近一次的提交状态
-git checkout -- <filepath>
-// 放弃工作区所有文件的变更（不包含未跟踪的）
-git checkout .
+移动、重命名、删除已跟踪文件也可以直接暂存：
+
+```sh
+git mv README.md GUIDE.md
+git rm -- obsolete.txt
 ```
 
-### commit
+`git rm` 会删除工作区文件并暂存删除，遇到可能丢失的修改时会拒绝执行。先检查修改，通常不需要 `-f`。Git 根据内容识别重命名，不要求一定用 `git mv`。
 
-用于将暂存区里的改动给提交到本地的版本库。
-```
-// 提交一个描述为 message 的 commit
-git commit -m "message"
-// 提交一个描述为 message 的 commit 并签名（部分开源社区会要求开发者提交的每个 commit 均使用 signoff 签名）
-git commit -s -m "message"
-// 相当于 git add -a 和 git commit -m "message" 两条命令
-git commit -am "message"
-// 在不增加一个新 commit 的情况下将新修改的代码追加到前一次的 commit 中，会弹出一个编辑器界面重新编辑 message 信息
-git commit --amend
-// 在不增加一个新 commit 的情况下将新修改的代码追加到前一次的 commit 中，不需要再修改 message 信息
-git commit --amend --no-edit
-// 提交一次没有任何改动的空提交，常用于触发远程 ci
-git commit --allow-empty -m "message"
-// 修改 commit 时间
-git commit -m "message" --date=" Wed May 27 00:35:36 2020 +0800"
+`git commit -am "message"` 可以自动暂存已跟踪文件的修改和删除，但不会加入新文件。团队若要求 signoff，可用 `git commit -s` 添加 `Signed-off-by` 声明；这是贡献声明，密码学签名使用 `git commit -S`，两者含义不同。
+
+### 回看历史和比较分支
+
+```sh
+git log --oneline --decorate --graph --all
+git show <commit>
+git log --grep="login"
+git log -S "functionName" -- src/app.js
+git shortlog -sn HEAD
 ```
 
-### revert
+`log` 展示提交历史，`show` 展示某次提交的说明和补丁。`--grep` 搜索提交说明，`-S` 寻找某字符串出现次数发生变化的提交。`shortlog -sn HEAD` 按提交数量汇总当前历史中的贡献者。
 
-撤销某个 commit 的改动。在多人协作中如果某个 commit 已经被推到了远程，此时使用 revert 相比 reset + force-update 是更优雅的撤销变更方式。可参考此[博客](https://www.cnblogs.com/0616--ataozhijia/p/3709917.html)和[博客](https://www.jianshu.com/p/5e7ee87241e4)。
+比较分支时，先确定自己想看哪一种差异：
 
-```
-// 可以撤销指定的提交
-git revert <commitId>
-// 可以撤销不包括 commit1，但包括 commit2 的一串提交
-git revert <commit1>...<commit2>
-// revert 命令会对每个撤销的 commit 进行一次提交，--no-commit 后可以最后一起手动提交
-git revert --no-commit <commit1>...<commit2>
-// 退出 revert 过程，常在处理冲突出错时使用
-git revert --abort
-// 继续 revert 过程，常在处理完冲突时使用
-git revert --continue
+```sh
+# 两个端点的文件快照差异
+git diff main feature/login
+# 从共同祖先到 feature/login 的变化，常用于审查功能分支
+git diff main...feature/login
+# feature/login 中可达、main 中不可达的提交
+git log main..feature/login
 ```
 
-### merge
+`diff A B` 与 `diff A..B` 都比较两个端点；`diff A...B` 比较共同祖先与 B，具有方向性。`log A..B` 是提交集合的筛选，`log A...B` 则取双方各自独有的提交。相同的点号在 `diff` 和 `log` 中不能按同一个意思理解。
 
-用于将两个或两个以上的开发历史合并在一起的操作，具体详细命令及介绍可看此[博客](https://www.jianshu.com/p/58a166f24c81)。
+## 分支开发
 
+### 创建、切换与删除分支
+
+```sh
+git switch -c feature/login
+git switch main
+git switch -
+git branch -vv
+git branch -m feature/login feature/sign-in
+git branch -d feature/sign-in
 ```
-// 合并某个分支
-git merge <branch>
-// 退出 merge 过程，常在处理冲突出错时使用
-git merge --abort
-// 继续 merge 过程，常在处理完冲突时使用
+
+`switch -c` 创建并切换分支，`switch -` 回到上一个分支；`branch -vv` 查看本地分支和上游关系。`branch -d` 检查分支是否已合并到它的上游；未设置上游时检查是否已合并到 `HEAD`。需要删除的分支不能是当前检出的分支，强制删除 `-D` 会跳过合并检查。
+
+切换分支不等于保存修改。能安全携带的未提交修改可能随切换保留；会被覆盖时 Git 会拒绝切换。先提交或使用 [stash](#临时保存工作)，不要把强制切换当成常规做法。
+
+临时查看一个标签或历史提交时，可以进入 detached HEAD：
+
+```sh
+git switch --detach v1.0.0
+# 如果要在此基础上继续提交，先给它创建分支
+git switch -c fix/old-release
+```
+
+detached HEAD 表示 `HEAD` 直接指向提交。此时仍能提交，但离开后没有分支名替你保留新提交，最好先创建分支。
+
+### 合并与变基
+
+完成一个功能后，把它合并进当前分支：
+
+```sh
+git switch main
+git merge feature/login
+```
+
+当 `main` 是功能分支的祖先时，默认可以直接快进：只移动分支引用，不创建合并提交。双方都有新提交时，通常会生成一个有两个父提交的 merge commit。需要明确保留合并节点时可用 `git merge --no-ff feature/login`。
+
+![同一分叉历史的三种处理：merge 保留两条历史并创建双亲提交 M；rebase 在 main 后重新生成 C′、D′；squash 只创建包含合并结果的单亲提交 S。](img/history.svg)
+
+功能分支还没有被别人依赖时，可以把自己的提交重新放到最新主线之后：
+
+```sh
+git switch feature/login
+git rebase main
+```
+
+`rebase` 重放提交，会生成新的提交 ID。它适合整理个人分支；已共享的分支需要团队协调。只想把功能结果变成一个提交时，在目标分支执行 `git merge --squash feature/login`，检查暂存区后再手动 `git commit`。squash 不记录双亲合并关系，因此后续 Git 不会仅凭历史认定原功能分支已合并。
+
+### 处理冲突与挑选提交
+
+发生冲突时，先用 `git status` 确认处于哪种操作，再编辑文件、处理 `<<<<<<<` 等冲突标记，运行项目检查并暂存结果：
+
+```sh
+git add -- <resolved-file>
+# 按当前操作选择一条继续命令
 git merge --continue
-```
-
-此外，关于在可以 fast-forward 合并时是否再提交一个 commit 有一些争议，具体可看此[博客](https://www.jianshu.com/p/b357df6794e3)。
-```
-git merge --no-ff <branch>
-```
-
-此外可以在 merge 时也可以使用 --squash 参数，该命令能够将合并分支上的多个 commit 合并成一个 commit 放在当前分支上。相比 rebase 的 squash，其主要区别是该 commit 的 author 不一样。具体可查看此[博客](https://www.jianshu.com/p/684a8ae9dcf1)。
-```
-git merge --squash <branch>
-```
-
-### rebase
-
-相比 merge，合并分支历史的另一种管理方式，区别可查看此[博客](https://www.jianshu.com/p/6960811ac89c)。
-```
-// 变基某个分支
-git rebase <branch>
-// 退出 rebase 过程，常在处理冲突出错时使用
-git rebase --abort
-// 继续 rebase 过程，常在处理完冲突时使用
 git rebase --continue
 ```
 
-此外也可以使用`git rebase -i HEAD~n` 来合并 n 个 commit，具体过程可参考此[博客](https://www.jianshu.com/p/6960811ac89c)。切记不要在共用的分支上进行 rebase，具体原因可查看此[博客](https://segmentfault.com/a/1190000005937408)。
+若决定放弃此次操作，使用对应的 `git merge --abort` 或 `git rebase --abort`。开始合并前尽量保持工作区干净，有未提交修改时中止操作也不保证能完整重建原状。
 
-此外也可以使用`git rebase --onto <branch> <fromCommitId> <toCommitId>`来将 (fromCommitId,toCommitId] 上的所有 commit 合并到指定分支上，具体可参考此[博客](https://www.cnblogs.com/rickyk/p/3848768.html)。其实类似于 cherry-pick 多个提交。
+只需要另一个分支中的某个修复时，不必合并整条分支：
 
-### cherry-pick
-
-用于将指定的 commit 应用于其他分支，具体可参考此[博客](http://www.ruanyifeng.com/blog/2020/04/git-cherry-pick.html)。
-```
-// 将指定的提交应用于当前分支
-git cherry-pick <commitId>
-// 将指定分支的最近一次提交应用于当前分支
-git cherry-pick <branch>
-// 将指定的两个提交先后应用于当前分支
-git cherry-pick <commitId1> <commitId2>
-// 将指定范围内的多个提交(不包含 commitId1，包含 commitId2)先后应用于当前分支
-git cherry-pick <commitId1>..<commitId2>
-// 将指定范围内的多个提交(包含 commitId1，包含 commitId2)先后应用于当前分支
-git cherry-pick <commitId1>^..<commitId2>
-// 退出 cherry-pick 过程，常在处理冲突出错时使用
-git cherry-pick --abort
-// 继续 cherry-pick 过程，常在处理完冲突时使用
+```sh
+git cherry-pick <commit>
+# 解决冲突并 add 后继续，或放弃本次挑选
 git cherry-pick --continue
+git cherry-pick --abort
 ```
 
-### tag
+`cherry-pick` 把指定提交的改动应用到当前分支，通常生成新的提交 ID。提交范围与交互式历史整理见[整理提交历史](#整理提交历史)。
 
-常用于发布版本的管理，是指向某个 commit 的指针，具体可查看此[博客](https://blog.csdn.net/jdsjlzx/article/details/98654951)。
+## 远程协作
 
-```
-// 查看所有 tag
-git tag
-// 基于本地当前分支最后一个 commit 创建 tag
-git tag <tagName> 
-// 基于指定 commit 创建 tag
-git tag <tagName> <commitId>
-// 基于指定 commit 创建 tag 并指定 message
-git tag -a <tagName> -m "message"
-// 删除本地指定 tag
-git tag -d <tagName>
+### 管理远程关联
+
+```sh
+git remote -v
+git remote add origin <url>
+git remote set-url origin <new-url>
+git remote rename origin upstream
+git remote remove upstream
 ```
 
-### push
+`origin` 只是约定俗成的名字。`clone` 已经添加它时无需重复执行 `remote add`。重命名或移除关联不会删除服务器上的仓库，移除后会失去该关联的本地远程跟踪引用。
 
-用于将本地版本库的分支推送到远程服务器上对应的分支，具体用法可查看此[博客](https://www.cnblogs.com/qianqiannian/p/6008140.html)。
-```
-// 向远程推送指定分支
-git push <remote> <branch>
-// 向远程推送指定分支并绑定
-git push -u <remote> <branch>
-// 删除远程分支
-git push <remote> :<branch>
-// 向远程推送 tag
-git push <remote> <tagName>
-// 删除远程 tag
-git push <remote> :<tagName>
-// 向远程推送本地所有 tag
-git push --tags <remote>
+### 获取更新并整合
+
+```sh
+git fetch --prune origin
+git log --oneline HEAD..origin/main
+git switch main
+git merge --ff-only origin/main
 ```
 
-此外，当本地版本库的分支和远程版本库的对应分支有冲突时，如果想要强制覆盖，千万不要用`git push -f`，而是应该用`git push --force-with-lease`，具体原因可查看此[博客](https://www.cnblogs.com/walterlv/p/10236461.html)。
+`fetch --prune` 更新远程跟踪引用，并清理远程已删除分支对应的本地跟踪引用，不会删除你的本地开发分支。这里默认的分支 refspec 不会清理标签；自定义 refspec 时需要确认实际作用范围。
 
-### fetch
+`merge --ff-only` 只允许快进；分叉时停止，留给你决定如何整合。当前分支配置好上游后，`git pull --ff-only` 可以完成获取与快进整合。若明确要重放当前分支的本地提交，则使用 `git pull --rebase`。`pull` 的整合方式受参数和配置影响，不宜一概称为 fetch 加 merge。
 
-用于从远程获取对象和引用到本地，具体可参考此[博客](https://www.yiibai.com/git/git_fetch.html)。
+### 发布分支和标签
 
-```
-// 取回指定远程仓库的所有分支
-git fetch <remote> 
-// 取回指定远程仓库的指定分支
-git fetch <remote> <branch>
-// 取回所有远程仓库的所有分支
-git fetch --all
-```
-
-### pull
-
-用于从远程获取代码并合并本地的版本，其实就是`git fetch`和`git merge FETCH_HEAD`的简写。有关其与 fetch 的区别，可以参考此[博客](https://www.cnblogs.com/ruiyang-/p/10764711.html)。
-
-```
-// 相当于 fetch + merge
-git pull <remote> <remote_branch>:<local_branch>
-// 相当于 fetch + rebase
-git pull --rebase <remote> <remote_branch>:<local_branch>
+```sh
+git push -u origin feature/login
+# 上游建立后，后续在该分支推送
+git push
+# 创建带说明的发布标签并单独推送
+git tag -a v1.0.0 -m "Release 1.0.0"
+git push origin v1.0.0
 ```
 
-### bisect
+`-u` 建立上游关系，用于后续默认推拉及 ahead/behind 提示。普通分支推送不会自动发布所有标签；发布时优先推送明确的标签。
 
-用于在 git 历史里面二分查找有 bug 的 commit。这是找 bug 时一个非常有用的命令，可以快速定位出引入 bug 的 commit。具体使用方式可查看此[博客](http://www.ruanyifeng.com/blog/2018/12/git-bisect.html)。
+分支合并后，可删除远程分支和本地分支；误建标签也需要区分本地与远程：
+
+```sh
+git push origin --delete feature/login
+git branch -d feature/login
+git tag -d v1.0.0
+git push origin --delete tag v1.0.0
 ```
-// 开始查找
-git bisect start [endCommitId] [startCommitId]
-// 版本正确
+
+这些是删除操作，执行前确认目标，已发布的标签通常不应重写。若个人分支经过 rebase，常规推送会因历史不再快进而拒绝；需要协调后使用带明确预期值的 `--force-with-lease`，示例见[改写历史后的推送](#改写历史后的推送)。它仍然会改写远程历史。
+
+## 撤销与恢复
+
+先区分要处理的是工作区修改、暂存内容，还是已经存在的提交。下面的表适用于已有提交、普通无冲突状态；`<commit>` 表示你明确选择的目标提交。
+
+| 目的 | 命令 | 结果 |
+|---|---|---|
+| 取消某文件的暂存 | `git restore --staged -- README.md` | 暂存区回到 HEAD，工作区不变 |
+| 丢弃某文件尚未暂存的修改 | `git restore -- README.md` | 用暂存区覆盖工作区，修改会丢失 |
+| 从旧提交取回文件 | `git restore --source=<commit> -- README.md` | 只覆盖工作区，确认后仍需 add、commit |
+| 撤销一个已共享提交的改动 | `git revert <commit>` | 新增一个反向提交，保留原有历史 |
+| 退回本地提交，保留暂存内容 | `git reset --soft <commit>` | 移动当前分支，暂存区和工作区不变 |
+| 退回本地提交，重新选择暂存内容 | `git reset --mixed <commit>` | 移动当前分支并重置暂存区，工作区不变 |
+| 丢弃本地修改并回到指定提交 | `git reset --hard <commit>` | 移动当前分支，覆盖暂存区与工作区 |
+
+### 恢复文件与取消暂存
+
+`restore --staged` 默认从 `HEAD` 恢复暂存区；不带 `--staged` 时默认从暂存区恢复工作区。两者来源和影响范围不同，不能混用。`restore` 不会移动分支，也不能“撤销一次提交”。仓库还没有首次提交时不存在 `HEAD`，新加文件可用 `git rm --cached -- <file>` 取消跟踪并保留工作区文件。
+
+需要让某文件的暂存区和工作区都回到 `HEAD` 时可以执行：
+
+```sh
+# 会丢弃该文件所有未提交修改，先检查 diff 与 diff --cached
+git restore --source=HEAD --staged --worktree -- README.md
+```
+
+工作区中从未暂存或提交的内容通常无法通过 Git 恢复，执行覆盖操作前先保存需要保留的内容。
+
+### 临时保存工作
+
+任务还没做完又需要切换分支时，先临时保存：
+
+```sh
+git stash push -u -m "WIP: login form"
+git stash list
+git stash show -p --include-untracked 'stash@{0}'
+git stash apply 'stash@{0}'
+# 确认恢复正确后，再删除这一条记录
+git stash drop 'stash@{0}'
+```
+
+默认 stash 保存已跟踪文件的工作区和暂存区状态；`-u` 额外保存未跟踪文件，仍不包含被忽略的文件。`apply` 保留 stash 记录，`pop` 只在成功恢复后移除，发生冲突时记录会保留。需要尝试恢复原来的暂存状态时使用 `apply --index`，仍可能冲突。
+
+`stash push --keep-index` 会让已暂存修改留在工作区及暂存区，适合单独测试暂存内容；stash 本身仍会记录已暂存修改，不能理解成“只保存未暂存部分”。stash 冲突没有专用的 `--continue` 命令，处理好文件后正常暂存、提交即可。`drop` / `clear` 会移除恢复入口，不应当作清理工作区的常用命令。
+
+### 撤销提交与找回历史
+
+已发布且被别人依赖的提交，通常使用 `revert`：
+
+```sh
+git revert <commit>
+# 冲突解决并 add 后继续，或中止操作
+git revert --continue
+git revert --abort
+```
+
+`reset` 则适用于明确要重写的本地历史。`--soft` 只移动提交位置，默认的 `--mixed` 再把暂存区恢复成目标快照，`--hard` 还覆盖工作区。`--hard` 不会普遍删除所有未跟踪文件，但会删除阻碍写入目标文件的未跟踪文件或目录，所以它也不是保留未跟踪文件的保证。
+
+误操作移动了分支时，先查本地 reflog，再创建救援分支，避免立刻再次覆盖工作区：
+
+```sh
+git reflog --date=local
+git show <lost-commit>
+git branch rescue/lost-work <lost-commit>
+```
+
+reflog 是本机引用变化记录，不会随 push 共享，也不会永久保留。它可以帮助找回尚未清理的提交，却不能保证找回从未被 Git 保存的文本。
+
+### 清理未跟踪文件
+
+先预览，再按路径删除。两次命令之间若文件有变化，实际删除范围也会变化：
+
+```sh
+git clean -nd -- build/
+git clean -fd -- build/
+```
+
+`-d` 包含未跟踪目录，默认仍遵守忽略规则；`-x` 会把被忽略的内容也纳入范围，例如本地配置、缓存或构建产物。只有确认所有目标均可丢弃时才考虑 `git clean -ndx` 预览和相应删除命令。未跟踪文件通常无法用 reflog 找回，`reset --hard` 加 `clean` 不应当作为日常“同步”方法。
+
+## 进阶操作
+
+日常提交与协作之外，下面介绍历史整理、多工作目录、排错和维护。改写历史前先确认提交是否已被别人依赖。
+
+### 整理提交历史
+
+#### 修改最后一次提交
+
+发现刚提交的说明或内容需要调整，并且尚未被别人依赖时：
+
+```sh
+git add -- <file>
+git commit --amend
+# 沿用原说明，只更新内容
+git commit --amend --no-edit
+```
+
+amend 会用新提交替换分支顶端的提交，提交 ID 会变化，不是直接修改原对象。`--date` 设置作者日期，不代表同时设置提交者日期；普通历史整理不需要人为调整时间。
+
+#### 交互式变基与指定基点
+
+整理当前分支最近三个提交，前提是存在 `HEAD~3`，并且这些提交允许重写：
+
+```sh
+git rebase -i HEAD~3
+```
+
+编辑器中按从旧到新的顺序列出提交。保留 `pick` 表示照常重放，`reword` 修改说明，`squash` 把该条合入前一条并编辑说明，`fixup` 合入前一条且丢弃该条说明，`drop` 丢弃该条。不要仅为“更整洁”删掉有用的历史；操作前可用 `git branch backup/before-rebase` 保留入口。
+
+需要把基于 `old-base` 开发的 topic 分支迁移到 `main` 上时：
+
+```sh
+git rebase --onto main old-base topic
+```
+
+这里选择 topic 中不属于 old-base 历史的提交，在 main 上重新生成它们，并更新 topic。它不是把两个端点之间的所有内容无条件复制，遇到合并、已应用补丁或空提交时还会受 rebase 的处理规则影响。
+
+#### 提交范围
+
+对于下面的线性历史，`A..C` 选择 B、C；`A^..C` 还包含 A，但要求 A 有父提交。
+
+```text
+P --- A --- B --- C
+```
+
+挑选一段提交时先查看选择结果：
+
+```sh
+git log --reverse --oneline <A>..<C>
+git cherry-pick <A>..<C>
+```
+
+撤销同一段线性历史时可以合并为一次反向提交：
+
+```sh
+git revert --no-commit <A>..<C>
+git diff --cached
+git commit -m "Revert the selected changes"
+```
+
+范围的含义是“从 C 可达但从 A 不可达的提交”，不是按日期截取。分叉历史要先核对实际提交集合。`A...C` 是双方独有提交的对称差，不能用它表达“排除 A、包含 C”。
+
+撤销 merge commit 还需要 `git revert -m 1 <merge-commit>` 这类主线选择。`-m 1` 指保留第一个父提交对应的主线，把 merge 相对它的变化反向应用；撤销后合并关系仍在，日后再次合并不会简单重放已撤销的祖先提交。先确认父提交和团队意图再操作。
+
+### 改写历史后的推送
+
+在自己的已发布功能分支上 rebase 或 amend 后，需要更新远程分支。先确认团队允许，获取并审查远程版本，然后锁定你确实看过的提交：
+
+```sh
+git fetch origin
+git log --oneline --left-right HEAD...origin/feature/login
+expected=$(git rev-parse refs/remotes/origin/feature/login)
+git push --force-with-lease=refs/heads/feature/login:"$expected" origin HEAD:refs/heads/feature/login
+```
+
+服务器只在远程分支仍指向 `expected` 时接受更新；别人之后推入新提交会让本次推送失败。审查时也需要确认远程已有的工作仍被保留或明确允许替换：lease 只检查远程是否变化，不检查你的新历史是否丢失改动。
+
+不带预期值的 `--force-with-lease` 依赖本地远程跟踪引用；后台 fetch 可能更新它，削弱“我看过这个版本”的保护。显式预期值更清楚，但仍然是历史改写，不能绕过分支保护，也不能替代协作约定。
+
+### 多个工作目录
+
+需要保留正在编辑的功能，同时处理一个紧急修复时，可以共享同一个仓库的对象，检出到不同目录：
+
+```sh
+git worktree add -b fix/urgent ../project-urgent main
+git worktree list
+# 在 ../project-urgent 中完成工作并提交后，再移除该工作目录
+git worktree remove ../project-urgent
+```
+
+每个 worktree 有独立的工作区、暂存区和 HEAD，大部分仓库配置、引用及对象共享。同一个本地分支默认不能同时在两个 worktree 检出。使用 `worktree remove` 让 Git 检查未提交内容，不要直接删目录；已经从磁盘移除的旧目录记录可用 `git worktree prune --dry-run` 检查，再用 `git worktree prune` 清理。
+
+如果确实需要没有父提交的新历史，例如单独发布文档，可用：
+
+```sh
+git worktree add --orphan -b site ../project-site
+```
+
+这个工作目录初始没有已跟踪文件，首次提交将成为新的根提交。
+
+### 定位问题
+
+#### 搜索内容与追踪来源
+
+```sh
+git grep -n -e "TODO" -- src/
+git grep -n -e "oldFunction" <commit> -- src/
+git blame -L 10,30 -- src/app.js
+git log -p -- src/app.js
+```
+
+`git grep` 默认搜索已跟踪文件，也能搜索指定提交中的内容；`blame` 展示每行最后一次相关修改的提交，不能直接推断谁引入了 bug。配合 `show` 或 `log -p` 查看上下文，通常比只看姓名更有效。
+
+#### 二分查找引入问题的提交
+
+已知一个正常版本和一个错误版本时，在干净工作区开始：
+
+```sh
+git bisect start
+git bisect bad <bad-commit>
+git bisect good <good-commit>
+# Git 检出中间提交，运行检查后按结果选一条
 git bisect good
-// 版本错误
 git bisect bad
-// 退出查找
+# 当前版本无法测试时
+git bisect skip
+# 找到问题或决定停止后，回到开始前的位置
 git bisect reset
 ```
 
-### reflog
+自动化时可用 `git bisect run ./test-regression.sh`。测试程序返回 0 表示正常，1～127（125 除外）表示错误，125 表示跳过；其他返回值中止查找。测试必须真正区分问题是否存在，避免把构建工具缺失误判为产品缺陷。
 
-常用来恢复本地错误操作。用户每次使用更新 HEAD 的 git 命令比如 commit、amend、cherry-pick、reset、revert 等都会被记录下来（不限分支），就像 shell 的 history 一样。 这样用户如果发生误操作删除了某个 commit 找不到时，调用此命令就可以查找到对应的 commit，从而回到误删前的状态了。具体使用场景可查看此[博客](https://cloud.tencent.com/developer/article/1413097)。
+### 管理子模块
 
-```
-git reflog
-```
+子模块是嵌在主项目中的独立 Git 仓库。主项目记录子模块的提交 ID 以及 `.gitmodules` 配置，更新主项目不等于自动检出了正确的子模块内容。
 
-### fsck
-
-常用来恢复本地错误操作。只要是对 HEAD 进行操作的错误，一般情况下 reflog 都能够恢复，然而有些错误并不会对 HEAD 进行操作，例如将部分代码 stash 之后又不小心 drop 或 clear 掉了，那么此时 HEAD 并没有发生变化，reflog 对此类错误是无能为力的，这个时候 fsck 就可以派上用场了，该命令会更加底层，即直接检查 git 中的 blob，tree 和 commit 对象并找到悬空的对象，找到后即可以通过 `git show <commitId>` 来查看该 commit 是否是被误操作删掉的 commit，如果是的话知道这个 commitId 无论如何都可以恢复了，不论用 merge 还是 cherry-pick 还是 checkout 等，可以参考一个恢复误删 stash 数据的[修复实例](https://www.jianshu.com/p/4cd5983586b2)，也可以进一步参考[官网实例](https://git-scm.com/book/zh/v2/Git-%E5%86%85%E9%83%A8%E5%8E%9F%E7%90%86-%E7%BB%B4%E6%8A%A4%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%81%A2%E5%A4%8D#_data_recovery)。
-
-```
-git fsck
-```
-
-### grep
-
-用于检索文件中的文本内容，更多用法可参考此[博客](https://www.softwhy.com/article-8652-1.html)。
-```
-// 检索所有包含指定关键字的文件
-git grep text
-// 检索关键字出现在哪一行
-git grep -n text
-// 统计每一个文件中检索到指定关键字的行数
-git grep -c text
+```sh
+git clone --recurse-submodules <url> project
+# 已经克隆主仓库时初始化或更新
+git submodule update --init --recursive
+# 添加新子模块
+git submodule add <library-url> vendor/library
+git commit -m "Add library submodule"
 ```
 
-### blame
+修改子模块时，先在子模块内创建分支、提交并推送，让其他人能获取到该提交，再回到主项目暂存并提交新的子模块指针：
 
-用于查看某个文件的每一行内容由谁所写，类似于 IDEA 的 annotate 功能，具体可查看此[博客](http://www.zhai14.com/blog/git-blame-command-help-u-find-out-who-made-the-serious-mistake.html)。
-
-```
-git blame <file>
-```
-
-### gc
-
-用来清理 git 目录，删除掉无效的应用和文件，节约存储空间和传输大小。具体功能可参考此[博客](https://blog.csdn.net/lihuanshuai/article/details/37345565)。
-
-```
-git gc
+```sh
+git add -- vendor/library
+git commit -m "Update library revision"
 ```
 
-### submodule
+默认 `submodule update` 常把子模块放在 detached HEAD。只要同步固定版本即可，不要为“更新到最新”直接加入 `--remote`；那会改为跟踪远程分支的版本，主项目仍需提交指针变化。
 
-用于管理多个子项目。该命令允许一个 git 仓库作为另一个 git 仓库的子目录，并且保持父项目和子项目相互独立。具体用法可参考此[博客](http://www.ayqy.net/blog/%E7%90%86%E8%A7%A3git-submodules/)。
+### 传递暂存的工作进度
 
-## 配置
+stash 不会随普通分支推送自动传递；临时工作需要在机器之间转移时，可以把选定 stash 导出成可传输的提交链。
 
-Git 自带一个 git config 的工具来帮助设置控制 Git 外观和行为的配置变量。这些变量存储在三个不同的位置：
-
-/etc/gitconfig 文件: 包含系统上每一个用户及他们仓库的通用配置。如果使用带有 --system 选项的 git config 时，它会从此文件读写配置变量。
-
-~/.gitconfig 文件：只针对当前用户。可以传递 --global 选项让 Git 读写此文件。
-
-当前使用仓库的 Git 目录中的 config 文件（就是 .git/config）：针对该仓库。
-
-每一个级别覆盖上一级别的配置，所以 .git/config 的配置变量会覆盖 /etc/gitconfig 中的配置变量。
-
-## .gitignore
-
-.gitignore 文件可能从字面含义也不难猜出：这个文件里配置的文件或目录，会自动被 git 所忽略，不纳入版本控制。
-
-在日常开发中，我们的项目经常会产生一些临时文件，如编译 Java 产生的 *.class 文件，又或是 IDE 自动生成的隐藏目录（Intellij 的 .idea 目录、Eclipse 的 .settings 目录等）等等。这些文件或目录实在没必要纳入版本管理。在这种场景下，你就需要用到 .gitignore 配置来过滤这些文件或目录。
-
-配置的规则很简单，也没什么可说的，看几个例子，自然就明白了。
-
-这里推荐一下 Github 的[开源项目](https://github.com/github/gitignore)。在这里，你可以找到很多常用的模板，如：Java、Nodejs、C++ 的 .gitignore 模板等等。
-
-一般有两个级别的 .gitignore 文件：一个是全局的 ~/.gitignore 文件，另一个是仓库目录下的 .gitignore 文件。前者会覆盖后者的过滤条件，因此一个项目具体有哪些文件会被 git 忽略与两个文件都有关。我们可以将 .idea，*.class 这种常有的过滤目录添加到全局的 ~/.gitignore 中，这样子就不用在每个仓库的 .gitignore 中再次添加了。
-
-## 我的 alias 设置
-```
-a = add 
-aa = add -A
-au = add -u
-ae = add -e
-ap = add -p
-bm = blame
-br = branch -vv
-bra = branch -a
-brd = branch -D
-brf = branch -f
-brm = branch -m
-bs = bisect
-bss = bisect start
-bsb = bisect bad
-bsg = bisect good
-bsr = bisect reset
-cf = config
-cfl = config --list
-cfg = config --global
-cfgl = config --global --list
-cfs = config --system
-cfsl = config --system --list
-cl = clone
-clb = clone --single-branch --branch
-cld = clone --depth
-cn = clean
-cnn = clean -n
-cnf = clean -f
-cnfx = clean -fx
-cndf = clean -df
-cndfx = clean -dfx
-cm = commit
-cmm = commit -s -m
-cmme = commit -s --allow-empty -m
-cma = commit -s --amend
-cman = commit -s --amend --no-edit
-co = checkout
-cob = checkout -b
-cod = checkout -- 
-coda = checkout .
-coo = checkout --orphan
-cp = cherry-pick
-cpa = cherry-pick --abort
-cpc = cherry-pick --continue
-df = diff
-dfc = diff --cached
-dfh = diff HEAD
-fh = fetch
-fha = fetch --all
-fc = fsck
-ge = grep -n 
-gec = grep -c 
-it = init
-lg = log
-lgo = log --oneline
-lgga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-lgge = log --grep
-lgs = log -S
-me = merge
-mea = merge --abort
-mec = merge --continue
-men = merge --no-ff
-mvf = mv -f
-pl = pull
-plr = pull --rebase
-ps = push
-psu = push -u
-psf = push --force-with-lease
-pst = push --tags
-rb = rebase
-rba = rebase --abort
-rbc = rebase --continue
-rbi = rebase -i
-rbo = rebase --onto
-rf = reflog
-rmc = rm --cached
-rmca = rm --cached -r .
-rmf = rm -f
-rmfa = rm -f -r .
-rs = reset
-rse = reset HEAD 
-rsh = reset --hard
-rss = reset --soft
-rv = revert
-rva = revert --abort
-rvc = revert --continue
-rvn = revert --no-commit
-rt = remote
-rta = remote add
-rtp = remote prune
-rtpd = remote prune --dry-run
-rtrm = remote remove
-rtrn = remote rename
-rtsu = remote set-url
-rtsua = remote set-url --add
-rtsud = remote set-url --delete
-rts = remote show
-rtu = remote update
-rtv = remote -v
-sh = stash
-shu = stash -u
-shk = stash --keep-index
-sha = stash apply
-shc = stash clear
-shd = stash drop
-shl = stash list
-shp = stash pop
-shsh = stash show
-shshp = stash show -p
-shsa = stash save
-shsak = stash save --keep-index
-so = show
-sl = shortlog
-slsn = shortlog -s -n
-st = status	--show-stash
-sti = stash ---ignored --show-stash
-tg = tag
-tga = tag -a
-tgd = tag -d
+```sh
+# 发送端：用专门分支传递选定的 stash 内容
+git stash export --to-ref refs/heads/wip-transfer 'stash@{0}'
+git push origin refs/heads/wip-transfer
+# 接收端：获取后导入本机 stash 列表
+git fetch origin refs/heads/wip-transfer
+git stash import FETCH_HEAD
+git stash list
 ```
 
-## 相关资料
-* [githug](https://github.com/Gazler/githug)
-* [learnGitBranching](https://github.com/pcottle/learnGitBranching)
-* [Git原理入门解析](https://mp.weixin.qq.com/s?__biz=MzI4Njc5NjM1NQ==&mid=2247489338&idx=2&sn=6fdd8968003b8f59d43c09b72894e877&chksm=ebd62816dca1a1003dcefb6dae8296dd08924426fa6f12d09b8695922007fcb9bfa342c35bd1&scene=21#wechat_redirect)
-* [Git 从入门到精通，这一篇就够了](https://mp.weixin.qq.com/s/b8bQW2N5VC-qmGD4dTiwKQ)
+`wip-transfer` 应是专用的新名称，导出会更新该引用，不要覆盖正常开发分支。导入会追加记录，不替换已有 stash。传递内容可能包含未完成代码和经 `-u` 保存的未跟踪文件，发布前检查内容；推到远程后就进入共享范围。
+
+### 仓库维护与恢复
+
+#### 先保留恢复机会
+
+误删提交或 stash 后，先停止进一步清理，复制整个仓库目录（包括 `.git`，linked worktree 还要包含它指向的公共 Git 目录）作为备份。普通 clone 只复制可达历史，不能代替这份现场备份。
+
+优先使用 reflog 查找旧提交并创建救援分支。找不到时，可以检查不可达对象：
+
+```sh
+git fsck --full --no-reflogs --unreachable
+git show <candidate-commit>
+# 确认是需要的普通提交后保留它
+git branch rescue/recovered <candidate-commit>
+```
+
+这会列出不少仍被 reflog 保护的正常旧对象，不能把所有 unreachable 都当成错误。只有对象尚未被清理且能识别内容时才可能恢复。被 drop 的 stash 若找到对应 stash commit，可用 `git stash apply <stash-commit>` 恢复工作内容；只创建分支或 cherry-pick 不一定能还原 stash 的暂存区及未跟踪文件。
+
+#### 何时使用 gc
+
+Git 会自动执行部分维护，普通使用一般不必手动运行 `git gc`。仓库确需整理时，`git gc` 会压缩对象并按过期策略清理部分不可达对象等数据，不是删除“无效引用”的万能命令。
+
+正在恢复历史时不要运行清理，也不要为了节省一点空间使用 `git gc --prune=now`；这会缩短恢复窗口，并增加与并发写入冲突的风险。reflog 和 fsck 都不能保证恢复已经清理的对象，更不能保证恢复从未保存到 Git 的文件。
+
+## 推荐别名
+
+正文与图表使用完整命令。熟悉命令后，可以用以下别名减少高频输入；脚本和团队交流仍建议写完整命令。
+
+### 使用别名
+
+Git alias 放在 Git 配置中，通过 `git sw main` 这样的形式调用。可以用配置命令添加：
+
+```sh
+git config set --global alias.sw switch
+git config set --global alias.swc "switch -c"
+git config set --global alias.unstage "restore --staged"
+```
+
+`--global` 对当前用户生效，只想在当前仓库试用时改用 `--local`。例如 `git unstage -- README.md` 只取消暂存，保留工作区内容。删除别名用 `git config unset --global alias.sw`。
+
+### 别名配置
+
+下面是一组高频操作的别名，可按需合入用户配置的 `[alias]` 段。配置文本应写入 Git 配置文件，不要作为 shell 命令执行，也不要覆盖文件中的其他配置。
+
+```gitconfig
+[alias]
+    st = status --show-stash
+    sti = status --ignored --show-stash
+    df = diff
+    dfc = diff --cached
+    lg = log
+    lgo = log --oneline
+    lgga = log --graph --oneline --decorate --all
+    so = show
+    a = add
+    aa = add -A
+    ap = add -p
+    cm = commit
+    sw = switch
+    swc = switch -c
+    br = branch -vv
+    fh = fetch
+    pl = pull --ff-only
+    ps = push
+    sh = stash
+    unstage = restore --staged
+```
+
+这些别名直接映射到 Git 子命令，没有 shell 函数，也不预设文件名和远程分支。`aa` 仍会暂存整个仓库，`pl` 遇到分叉会拒绝整合；别名短不代表不需要检查范围。
+
+涉及文件覆盖、删除、历史改写的操作保留完整写法，例如 `restore -- <file>`、`reset --hard`、`clean -fdx`、`branch -D` 和强制推送。这里也不默认添加 signoff，是否使用 `commit -s` 由项目贡献约定决定。
+
+## 命令索引
+
+| 命令 | 查阅位置 |
+|---|---|
+| `init`、`clone`、`config`、`check-ignore` | [开始使用](#开始使用) |
+| `status`、`diff`、`add`、`commit`、`rm`、`mv` | [查看与提交](#查看与提交) |
+| `log`、`show`、`shortlog` | [回看历史和比较分支](#回看历史和比较分支) |
+| `branch`、`switch`、`merge`、`rebase`、`cherry-pick` | [分支开发](#分支开发) |
+| `remote`、`fetch`、`pull`、`push`、`tag` | [远程协作](#远程协作) |
+| `restore`、`stash`、`revert`、`reset`、`reflog`、`clean` | [撤销与恢复](#撤销与恢复) |
+| `worktree` | [多个工作目录](#多个工作目录) |
+| `bisect`、`grep`、`blame` | [定位问题](#定位问题) |
+| `submodule` | [管理子模块](#管理子模块) |
+| `fsck`、`gc` | [仓库维护与恢复](#仓库维护与恢复) |
+
+## 中文速查表
+
+下面按日常任务列出完整命令。图中的覆盖、撤销与改写操作附有文字说明；执行前仍需结合上文确认影响范围。图表直接保存在 SVG 中，可编辑文字与布局，无需生成服务或构建步骤。
+
+![中文 Git 速查表：查看、提交、分支、协作、临时保存与撤销恢复；丢弃修改和改写历史的操作有明确文字标注。](img/cheatsheet.svg)
+
+## 参考资料
+
+正文内已说明日常操作所需的概念和边界，外部链接集中在此供核对与深入阅读。也可使用 `git <command> -h` 查看简短帮助，使用 `git help <command>` 查看完整手册（需要本机安装相应文档）。
+
+- [Git 官方命令手册](https://git-scm.com/docs)：按命令查询参数。
+- [git-config](https://git-scm.com/docs/git-config)：配置子命令、作用域及来源。
+- [git-diff](https://git-scm.com/docs/git-diff)、[gitrevisions](https://git-scm.com/docs/gitrevisions)：端点比较与提交范围的不同含义。
+- [git-restore](https://git-scm.com/docs/git-restore)、[git-reset](https://git-scm.com/docs/git-reset)、[git-revert](https://git-scm.com/docs/git-revert)、[git-stash](https://git-scm.com/docs/git-stash)：撤销与恢复的边界。
+- [git-merge](https://git-scm.com/docs/git-merge)、[git-rebase](https://git-scm.com/docs/git-rebase)、[git-push](https://git-scm.com/docs/git-push)：整合历史和发布提交。
+- [gitignore](https://git-scm.com/docs/gitignore)：忽略规则的优先级。
+- [git-worktree](https://git-scm.com/docs/git-worktree)：多个工作目录与独立历史。
+- [git-bisect](https://git-scm.com/docs/git-bisect)：二分排错与自动测试的退出码。
+- [git-submodule](https://git-scm.com/docs/git-submodule)：子模块初始化与指针更新。
+- [git-fsck](https://git-scm.com/docs/git-fsck)、[git-gc](https://git-scm.com/docs/git-gc)、[git-reflog](https://git-scm.com/docs/git-reflog)：对象检查、维护与恢复窗口。
+- [Pro Git 中文版](https://git-scm.com/book/zh/v2)：系统理解分支、协作和内部原理。
+- [Learn Git Branching](https://learngitbranching.js.org/?locale=zh_CN)：交互式练习分支与历史操作。

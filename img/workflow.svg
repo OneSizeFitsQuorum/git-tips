@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Git 修改流向</title>
+  <desc id="desc">add 从工作区写入暂存区，commit 从暂存区生成本地提交，push 发布到远程。restore 用暂存区覆盖工作区；restore --staged 从 HEAD 恢复暂存区而保留工作区。fetch 只获取对象和远程跟踪记录，不移动当前分支。</desc>
+  <defs>
+    <style>
+      text { font-family: "Noto Sans CJK SC", "Microsoft YaHei", "PingFang SC", sans-serif; fill: #172e43; }
+      .code { font-family: "DejaVu Sans Mono", Consolas, monospace; }
+    </style>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563a6"/></marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#087f75"/></marker>
+    <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a64b19"/></marker>
+  </defs>
+  <rect width="1200" height="800" rx="20" fill="#f4f7fa"/>
+  <text x="40" y="58" font-size="32" style="fill:#172e43" font-weight="700">Git 修改流向</text>
+  <text x="40" y="97" font-size="21" style="fill:#526779">先分清内容保存在哪里，再决定使用哪条命令。</text>
+  <rect x="40" y="155" width="220" height="155" rx="14" fill="white" stroke="#d7e0e8"/>
+  <text x="58" y="187" font-size="16" style="fill:#087f75" font-weight="700">01</text>
+  <text x="58" y="222" font-size="27" style="fill:#172e43" font-weight="700">工作区</text>
+  <text x="58" y="258" font-size="18" style="fill:#526779">你正在编辑的文件</text>
+  <text x="58" y="286" font-size="17" style="fill:#526779">可含未跟踪文件</text>
+  <rect x="340" y="155" width="220" height="155" rx="14" fill="white" stroke="#d7e0e8"/>
+  <text x="358" y="187" font-size="16" style="fill:#087f75" font-weight="700">02</text>
+  <text x="358" y="222" font-size="27" style="fill:#172e43" font-weight="700">暂存区</text>
+  <text x="358" y="258" font-size="18" style="fill:#526779">下一次提交的快照</text>
+  <text x="358" y="286" font-size="17" style="fill:#526779">index / staging area</text>
+  <rect x="640" y="155" width="220" height="155" rx="14" fill="white" stroke="#d7e0e8"/>
+  <text x="658" y="187" font-size="16" style="fill:#087f75" font-weight="700">03</text>
+  <text x="658" y="222" font-size="27" style="fill:#172e43" font-weight="700">本地仓库</text>
+  <text x="658" y="258" font-size="18" style="fill:#526779">提交与本地分支</text>
+  <text x="658" y="286" font-size="17" style="fill:#526779">也保存远程跟踪记录</text>
+  <rect x="940" y="155" width="220" height="155" rx="14" fill="white" stroke="#d7e0e8"/>
+  <text x="958" y="187" font-size="16" style="fill:#087f75" font-weight="700">04</text>
+  <text x="958" y="222" font-size="27" style="fill:#172e43" font-weight="700">远程仓库</text>
+  <text x="958" y="258" font-size="18" style="fill:#526779">共享提交与引用</text>
+  <text x="958" y="286" font-size="17" style="fill:#526779">例如服务器上的 main</text>
+  <path d="M 267 231 H 332" fill="none" stroke="#2563a6" stroke-width="3" marker-end="url(#arrow-blue)"/>
+  <text x="300" y="213" font-size="17" style="fill:#2563a6" class="code" text-anchor="middle">add</text>
+  <path d="M 567 231 H 632" fill="none" stroke="#2563a6" stroke-width="3" marker-end="url(#arrow-blue)"/>
+  <text x="600" y="213" font-size="17" style="fill:#2563a6" class="code" text-anchor="middle">commit</text>
+  <path d="M 867 231 H 932" fill="none" stroke="#2563a6" stroke-width="3" marker-end="url(#arrow-blue)"/>
+  <text x="900" y="213" font-size="17" style="fill:#2563a6" class="code" text-anchor="middle">push</text>
+  <path d="M 450 310 V 367 H 150 V 310" fill="none" stroke="#a64b19" stroke-width="3" marker-end="url(#arrow-orange)"/>
+  <text x="300" y="350" font-size="19" style="fill:#a64b19" class="code" text-anchor="middle">git restore -- &lt;file&gt;</text>
+  <text x="300" y="399" font-size="19" style="fill:#a64b19" text-anchor="middle">覆盖工作区：尚未暂存的修改会丢失</text>
+  <path d="M 750 310 V 444 H 520 V 310" fill="none" stroke="#087f75" stroke-width="3" marker-end="url(#arrow-teal)"/>
+  <text x="770" y="438" font-size="19" style="fill:#087f75" class="code">git restore --staged -- &lt;file&gt;</text>
+  <text x="770" y="469" font-size="18" style="fill:#087f75">从 HEAD 恢复暂存区，保留工作区</text>
+  <path d="M 1050 155 V 130 H 750 V 155" fill="none" stroke="#2563a6" stroke-width="3" marker-end="url(#arrow-blue)" stroke-dasharray="7 6"/>
+  <text x="900" y="121" font-size="19" style="fill:#2563a6" class="code" text-anchor="middle">git fetch</text>
+  <rect x="40" y="571" width="1120" height="177" rx="14" fill="white" stroke="#d7e0e8"/>
+  <text x="62" y="609" font-size="21" style="fill:#172e43" font-weight="700">查看差异</text>
+  <text x="62" y="648" font-size="19" style="fill:#172e43" class="code">git diff</text>
+  <text x="290" y="648" font-size="19" style="fill:#526779">工作区 ↔ 暂存区</text>
+  <text x="62" y="685" font-size="19" style="fill:#172e43" class="code">git diff --cached</text>
+  <text x="290" y="685" font-size="19" style="fill:#526779">暂存区 ↔ HEAD</text>
+  <text x="62" y="722" font-size="17" style="fill:#526779">未跟踪文件需先 add，以上差异命令默认不展示其内容。</text>
+  <text x="640" y="609" font-size="21" style="fill:#172e43" font-weight="700">远程更新分两步</text>
+  <text x="640" y="648" font-size="19" style="fill:#2563a6">fetch：获取对象与远程跟踪引用</text>
+  <text x="640" y="685" font-size="19" style="fill:#172e43">merge / rebase：再整合到当前分支</text>
+  <text x="640" y="722" font-size="17" style="fill:#526779">fetch 本身不更新当前分支、暂存区或工作区。</text>
+</svg>
