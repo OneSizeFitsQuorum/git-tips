@@ -2,60 +2,83 @@
 
 平时用 Git，`add`、`commit`、`push` 往往已经够用了。真正让人停下来查资料的，是只想提交半个文件、刚提交就发现漏了两行，或者手一快，把还没保存的修改弄丢了。
 
-这里整理了 **33 个常用 Git tips**：从建仓库、提交代码，到分支协作和误操作后的补救。每条都可以单独看，找到眼前的问题，试一试对应的命令。希望下次你在终端里犹豫时，这里刚好有用得上的那一条。
+这里整理了 **36 个常用 Git tips**，分成六组：从建仓库、提交代码，到分支协作和误操作后的补救。每条先用一张图看清变化，再给出能复制的命令。可以从头看，也可以直接找眼前用得上的那一条。
 
-本文基于 **Git 2.51+**，示例在 Git 2.56.0 验证。分支操作用 `switch`，文件恢复用 `restore`。命令中的 `<url>`、`<commit>`、`<file>` 需要替换；分支名和路径也请按自己的项目调整。同一代码块里有时会列出几种做法，按需要选择即可。
+本文基于 **Git 2.51+**，示例在 Git 2.56.0 验证。命令中的 `<url>`、`<commit>`、`<file>` 需要替换；分支名和路径请按自己的项目调整。同一代码块有时列出几种做法，按需要选择即可。
 
 如果这些 tips 帮到了你，欢迎留个 Star，也欢迎提 Issue 或 PR，一起把容易踩的坑补齐。😊
 
 <details>
-<summary>33 个 tips，点开直达</summary>
+<summary>36 个 tips，点开直达</summary>
 
-- [1. init / clone：先把仓库建起来](#1-init--clone先把仓库建起来)
-- [2. config：提交之前，先确认你是谁](#2-config提交之前先确认你是谁)
-- [3. gitignore：不该进仓库的文件，早点排除](#3-gitignore不该进仓库的文件早点排除)
-- [4. remote：origin 只是一个名字](#4-remoteorigin-只是一个名字)
-- [5. status：拿不准的时候，先看状态](#5-status拿不准的时候先看状态)
-- [6. diff：这次提交里到底有什么](#6-diff这次提交里到底有什么)
-- [7. add：一个文件也能分两次提交](#7-add一个文件也能分两次提交)
-- [8. commit：把选好的修改存下来](#8-commit把选好的修改存下来)
-- [9. mv / rm：重命名、删除和停止跟踪](#9-mv--rm重命名删除和停止跟踪)
-- [10. log / show：把历史看清楚](#10-log--show把历史看清楚)
-- [11. log：记不住提交号，也能找到它](#11-log记不住提交号也能找到它)
-- [12. switch：新功能，从新分支开始](#12-switch新功能从新分支开始)
-- [13. branch：分支多了，记得整理](#13-branch分支多了记得整理)
-- [14. merge：把做好的功能合回来](#14-merge把做好的功能合回来)
-- [15. rebase：让自己的提交接在主线后面](#15-rebase让自己的提交接在主线后面)
-- [16. squash：只想留下一个提交](#16-squash只想留下一个提交)
+
+**开工前，把仓库准备好**
+
+- [1. init / clone：新建项目，还是克隆已有项目](#1-init--clone新建项目还是克隆已有项目)
+- [2. config：提交之前，先确认身份](#2-config提交之前先确认身份)
+- [3. gitignore：不该进仓库的文件，怎么处理](#3-gitignore不该进仓库的文件怎么处理)
+- [4. remote：一个本地仓库，可以连接哪些远程](#4-remote一个本地仓库可以连接哪些远程)
+
+**一次本地提交**
+
+- [5. status / diff：提交前，看清自己改了什么](#5-status--diff提交前看清自己改了什么)
+- [6. add：一个文件，也能分两次提交](#6-add一个文件也能分两次提交)
+- [7. commit：把选好的修改提交下来](#7-commit把选好的修改提交下来)
+- [8. amend：刚提交，发现漏了一个文件](#8-amend刚提交发现漏了一个文件)
+- [9. log / show：找到想看的那次提交](#9-log--show找到想看的那次提交)
+
+**分支上的工作**
+
+- [10. switch / branch：为新功能创建和整理分支](#10-switch--branch为新功能创建和整理分支)
+- [11. detached HEAD：临时查看历史，怎么继续开发](#11-detached-head临时查看历史怎么继续开发)
+- [12. diff / log：两个分支，到底差在哪里](#12-diff--log两个分支到底差在哪里)
+- [13. merge：把做好的功能合回来](#13-merge把做好的功能合回来)
+- [14. rebase：把自己的提交接到主线后面](#14-rebase把自己的提交接到主线后面)
+- [15. squash：合入时只留下最终结果](#15-squash合入时只留下最终结果)
+- [16. cherry-pick：只拿其中一个修复](#16-cherry-pick只拿其中一个修复)
 - [17. 冲突：先解决文件，再继续操作](#17-冲突先解决文件再继续操作)
-- [18. cherry-pick：只拿其中一个修复](#18-cherry-pick只拿其中一个修复)
+
+**与远程协作**
+
+- [18. 远程分支：接着别人的工作继续开发](#18-远程分支接着别人的工作继续开发)
 - [19. fetch：先看看远程发生了什么](#19-fetch先看看远程发生了什么)
-- [20. pull：分叉了，先停一下](#20-pull分叉了先停一下)
+- [20. pull：双方都有新提交怎么办](#20-pull双方都有新提交怎么办)
 - [21. push：把本地提交发出去](#21-push把本地提交发出去)
-- [22. tag：给发布版本留个名字](#22-tag给发布版本留个名字)
-- [23. restore：取消暂存和丢弃修改要分清](#23-restore取消暂存和丢弃修改要分清)
-- [24. stash：没做完的活，先存一下](#24-stash没做完的活先存一下)
-- [25. revert：已经推送的提交怎么撤销](#25-revert已经推送的提交怎么撤销)
-- [26. reset：三个参数，影响三个地方](#26-reset三个参数影响三个地方)
-- [27. reflog：提交找不到了，先别急着清理](#27-reflog提交找不到了先别急着清理)
-- [28. clean：删之前，先看一眼名单](#28-clean删之前先看一眼名单)
-- [29. amend / rebase -i：提交前后，收拾一下](#29-amend--rebase--i提交前后收拾一下)
-- [30. worktree：两个任务，两个工作目录](#30-worktree两个任务两个工作目录)
-- [31. grep / blame：这段代码从哪来的](#31-grep--blame这段代码从哪来的)
-- [32. bisect：让 Git 帮你找出坏提交](#32-bisect让-git-帮你找出坏提交)
-- [33. submodule：仓库里面还有一个仓库](#33-submodule仓库里面还有一个仓库)
+- [22. push --force-with-lease：rebase 后推送被拒绝，怎么处理](#22-push---force-with-leaserebase-后推送被拒绝怎么处理)
+- [23. tag：给发布版本留一个名字](#23-tag给发布版本留一个名字)
+
+**撤销与补救**
+
+- [24. restore --staged：add 多了，怎么取消暂存](#24-restore---stagedadd-多了怎么取消暂存)
+- [25. restore：文件改错了，怎么恢复](#25-restore文件改错了怎么恢复)
+- [26. stash：没做完的工作，先存一下](#26-stash没做完的工作先存一下)
+- [27. reset：退回本地提交，重新组织修改](#27-reset退回本地提交重新组织修改)
+- [28. revert：已分享的提交，怎么撤销改动](#28-revert已分享的提交怎么撤销改动)
+- [29. 改错分支：先保留成果，再调整位置](#29-改错分支先保留成果再调整位置)
+- [30. reflog：提交找不到，先找恢复入口](#30-reflog提交找不到先找恢复入口)
+- [31. clean：清理未跟踪文件，先看删除名单](#31-clean清理未跟踪文件先看删除名单)
+
+**偶尔用到，但值得知道**
+
+- [32. rebase -i：把多个提交整理得更好读](#32-rebase--i把多个提交整理得更好读)
+- [33. worktree：两个任务，两个工作目录](#33-worktree两个任务两个工作目录)
+- [34. grep / blame：这段代码从哪里来](#34-grep--blame这段代码从哪里来)
+- [35. bisect：让 Git 找出引入 bug 的提交](#35-bisect让-git-找出引入-bug-的提交)
+- [36. submodule：仓库里面，还有一个仓库](#36-submodule仓库里面还有一个仓库)
 
 </details>
 
-动手前，先认一下下面四个位置。你编辑的是工作区，`add` 选出的内容放进暂存区，`commit` 存到本地仓库，`push` 才会发布到远程。后面那些容易混淆的“撤销”，大多是在这些位置之间取回或覆盖内容。
+动手前，先认一下下面四个位置。你编辑的是工作区，`add` 选出的内容放进暂存区，`commit` 存到本地仓库，`push` 才会发布到远程。后面的很多操作，都是改变其中的内容或引用。
 
-![Git 修改流向：工作区经 add 到暂存区、经 commit 到本地仓库、经 push 到远程；fetch 只取回对象和远程记录，restore 与 restore --staged 的作用范围不同。](img/workflow.png)
+![Git 修改流向：工作区、暂存区、本地仓库与远程仓库；fetch 不直接修改工作区。](img/workflow.webp)
 
-## 33 个 tips
+## 开工前，把仓库准备好
 
-### 1. init / clone：先把仓库建起来
+### 1. init / clone：新建项目，还是克隆已有项目
 
 新项目用 `init`，已有项目用 `clone`，两者选一个：
+
+![新项目用 init 创建本地仓库，已有项目用 clone 取回仓库和历史。](img/tips/01-init-clone.webp)
 
 ```sh
 git init -b main my-project
@@ -72,9 +95,11 @@ git fetch --unshallow
 
 浅克隆限制的是历史深度，会影响追溯、变基和二分排错，并不是一个解决大文件下载问题的通用开关。
 
-### 2. config：提交之前，先确认你是谁
+### 2. config：提交之前，先确认身份
 
 换电脑后的第一件小事：设置提交里的姓名和邮箱。
+
+![系统、用户、仓库配置逐层覆盖，仓库邮箱优先于用户邮箱；提交身份与登录凭据分别配置。](img/tips/02-config.webp)
 
 ```sh
 git config set --global user.name "Your Name"
@@ -94,9 +119,11 @@ git config unset --local user.email
 
 提交身份和远程登录是两回事。改邮箱不能解决 SSH 密钥或 HTTPS 凭据的问题。
 
-### 3. gitignore：不该进仓库的文件，早点排除
+### 3. gitignore：不该进仓库的文件，怎么处理
 
 构建产物、日志之类的共同规则，放在仓库的 `.gitignore` 并提交：
+
+![未跟踪文件可以被忽略；已跟踪文件需要 rm --cached 停止跟踪，本地文件保留，历史内容仍在。](img/tips/03-ignore.webp)
 
 ```gitignore
 /build/
@@ -113,11 +140,21 @@ git config set --global core.excludesFile ~/.config/git/ignore
 git check-ignore -v -- build/output.txt
 ```
 
-已经跟踪的文件不受新规则影响，停止跟踪的方法见第 9 条。如果提交过密钥，忽略或删文件都清不掉历史中的内容，先撤换密钥。
+已经跟踪的文件不会因为新增规则自动退出版本管理。要保留本地文件、停止跟踪，需要提交一次删除：
 
-### 4. remote：origin 只是一个名字
+```sh
+git rm --cached -- app.log
+git add .gitignore
+git commit -m "Stop tracking generated log"
+```
+
+`--cached` 保留的是当前本机文件，别人更新这个删除提交时仍会受到影响。历史里已有的内容也还在；如果提交过密钥，先撤换密钥。
+
+### 4. remote：一个本地仓库，可以连接哪些远程
 
 `clone` 通常已经替你配置了 `origin`。要添加第二个仓库、换地址或者删除关联时：
+
+![本地 origin 与 upstream 是指向不同远程地址的关联名称，删除关联不等于删除服务器仓库。](img/tips/04-remote.webp)
 
 ```sh
 git remote -v
@@ -129,38 +166,30 @@ git remote remove source
 
 `remote remove` 删除的是本地关联及对应的远程跟踪引用，不会把服务器上的仓库删掉。
 
-### 5. status：拿不准的时候，先看状态
+## 一次本地提交
+
+### 5. status / diff：提交前，看清自己改了什么
+
+文件名能告诉你改了哪里，diff 才能告诉你改了什么。一个文件暂存后又被编辑，还会同时出现两份修改。
+
+![MM 的第一列表示暂存区、第二列表示工作区；diff、diff --cached、diff HEAD 分别比较不同位置。](img/tips/05-status-diff.webp)
 
 ```sh
 git status -sb
-```
-
-`-s` 简洁显示，`-b` 带上分支信息。文件前两列分别是暂存区和工作区的状态，`??` 表示未跟踪。一个文件前出现两个 `M` 并不奇怪：暂存后又编辑了它，就会同时存在两份修改。
-
-遇到冲突或操作中断，直接用完整的 `git status`，它通常会提示下一步该做什么。
-
-### 6. diff：这次提交里到底有什么
-
-提交前值得多看一眼的是 `diff --cached`，它展示的才是暂存区里准备提交的内容。
-
-```sh
 git diff                 # 工作区与暂存区
 git diff --cached        # 暂存区与 HEAD
 git diff HEAD            # 工作区与 HEAD
 ```
 
-这些命令默认不展示未跟踪文件的内容。比较分支则要分清两个端点和共同祖先：
+`status -s` 简洁显示，`-b` 带分支信息。文件前两列分别表示暂存区、工作区状态，`??` 表示未跟踪。提交前尤其值得看的是 `diff --cached`，它展示准备提交的内容；这些 diff 命令默认不展示未跟踪文件的内容。
 
-```sh
-git diff main feature/login       # 比较两个分支当前的快照
-git diff main...feature/login     # 共同祖先到 feature/login 的变化
-```
+遇到冲突或操作中断，用完整的 `git status`，它通常会提示下一步。
 
-`diff A..B` 等同于 `diff A B`；`diff A...B` 有方向性，适合看功能分支带来了什么。不要把它和 `log` 的提交范围混为一谈。
-
-### 7. add：一个文件也能分两次提交
+### 6. add：一个文件，也能分两次提交
 
 改到一半顺手修了另一个问题？不必把它们绑进同一次提交，`-p` 可以逐块选择：
+
+![同一文件的两个修改块，只选择登录修复进入暂存区，日志调整继续留在工作区。](img/tips/06-add.webp)
 
 ```sh
 git add -p
@@ -178,7 +207,20 @@ git add -u    # 整个仓库，只处理已跟踪文件的修改和删除
 
 `add` 保存的是执行那一刻的内容。之后继续编辑的部分，需要再暂存才会进入提交。
 
-### 8. commit：把选好的修改存下来
+重命名和删除也可以明确加入这次提交：
+
+```sh
+git mv old-name.txt new-name.txt
+git rm -- obsolete.txt
+```
+
+`rm` 会检查可能丢失的修改，先看看为什么拒绝，通常不需要直接加 `-f`。
+
+### 7. commit：把选好的修改提交下来
+
+选好暂存内容后，commit 把它保存成一次本地提交。
+
+![新提交来自暂存区，未选中的工作区修改不会自动加入；提交后当前分支指向新提交。](img/tips/07-commit.webp)
 
 ```sh
 git commit -m "Fix login redirect"
@@ -188,42 +230,45 @@ git commit -m "Fix login redirect"
 
 还有两个长得很像的参数：`-s` 添加 `Signed-off-by` 贡献声明，`-S` 才是密码学签名。项目要求 signoff 时用 `git commit -s`，不要把两者当成一回事。
 
-### 9. mv / rm：重命名、删除和停止跟踪
+### 8. amend：刚提交，发现漏了一个文件
+
+刚提交就发现漏了文件，或者说明没写清楚，可以补改最后一次提交。
+
+![C 被同父提交的新提交 C′ 替代，分支移到 C′；C′ 不是 C 后面追加的子提交。](img/tips/08-amend.webp)
 
 ```sh
-git mv old-name.txt new-name.txt
-git rm -- obsolete.txt
-# 保留本地文件，只从版本管理中移除
-git rm --cached -- app.log
+git add -- <file>
+git commit --amend --no-edit
+# 需要一起修改说明时，用 git commit --amend
 ```
 
-前两条会暂存重命名或删除，最后一条适合配合 `.gitignore` 停止跟踪生成文件。`git rm` 会检查可能丢失的修改，先看看它为什么拒绝，通常不需要直接加 `-f`。
+amend 用新提交替换分支顶端的提交，ID 会变化；它不会把后续改动自动加入，先 add 需要补交的内容。别人已经依赖的提交，需要先协调，不能只把它当成一次普通补交。
 
-`--cached` 保留的是你当前的本地文件。把删除提交并分享后，其他人更新时也会受到影响；历史里已有的内容仍然存在。
+### 9. log / show：找到想看的那次提交
 
-### 10. log / show：把历史看清楚
+知道大致改了什么、却记不住提交号时，可以从提交图、说明或代码内容找起。
+
+![从提交图找到提交，通过 log 搜索说明或内容，再用 show 查看补丁。](img/tips/09-history-search.webp)
 
 ```sh
 git log --oneline --decorate --graph --all
 git show <commit>
+git log --grep="login"
+git log -S "functionName" -- src/app.js
 git shortlog -sn HEAD
 ```
 
-第一条把分支和提交关系画出来；第二条看某次提交的说明和补丁；第三条按提交数汇总贡献者。
+`log` 看历史，`show` 看某次提交的说明和补丁。`--grep` 搜索提交说明，`-S` 寻找字符串出现次数变化的提交，适合追踪代码何时加入或删除；`shortlog -sn HEAD` 按提交数汇总贡献者。
 
-分支名本质上是指向提交的引用，`HEAD` 通常指向当前分支。后面读历史图、做 reset 时，想一想“哪个名字移动了”，会更容易理解。
+分支是指向提交的引用，HEAD 通常指向当前分支。读图时先认清这些名字，比单看一长串提交号容易。
 
-### 11. log：记不住提交号，也能找到它
+## 分支上的工作
 
-```sh
-git log --grep="login"                    # 搜索提交说明
-git log -S "functionName" -- src/app.js    # 字符串出现次数发生变化的提交
-git log --oneline main..feature/login     # feature/login 有、main 没有的提交
-```
+### 10. switch / branch：为新功能创建和整理分支
 
-`-S` 很适合追踪某段代码什么时候被加进来或删掉。`log A..B` 选择从 B 可达、从 A 不可达的提交；`log A...B` 则选择双方独有的提交，是两个集合的对称差。
+创建 feature/login 后它与 main 起初指向同一个提交，HEAD 改为指向 feature/login。
 
-### 12. switch：新功能，从新分支开始
+![创建 feature/login 后它与 main 起初指向同一个提交，HEAD 改为指向 feature/login。](img/tips/10-branches.webp)
 
 ```sh
 git switch -c feature/login
@@ -233,9 +278,7 @@ git switch -
 
 分别是创建并切换、切换到已有分支、回到上一个分支。
 
-切换分支不会替你保存修改：能安全携带的修改可能跟过去，会被覆盖时 Git 会拒绝切换。工作还没做完，先看第 24 条的 stash。
-
-### 13. branch：分支多了，记得整理
+切换分支不会替你保存修改：能安全携带的修改可能跟过去，会被覆盖时 Git 会拒绝切换。工作还没做完，可以先用 stash 临时保存。
 
 ```sh
 git branch -vv
@@ -245,16 +288,41 @@ git branch -d feature/sign-in
 
 `-vv` 查看本地分支及上游关系。`-d` 会检查是否已合并到上游；没有上游时检查是否已合并到 HEAD。不能删除当前检出的分支；`-D` 会跳过合并检查，使用前确认提交已保留。
 
-只想看看一个发布版本，可以进入 detached HEAD；如果准备继续开发，就给它建个分支：
+### 11. detached HEAD：临时查看历史，怎么继续开发
+
+临时查看标签或历史提交时，HEAD 可以直接指向提交。此时没有当前分支替你保留新提交的入口。
+
+![普通状态 HEAD 指向分支；游离状态 HEAD 直接指向历史提交，创建新分支不移动 main。](img/tips/11-detached.webp)
 
 ```sh
 git switch --detach v1.0.0
+# 准备在这个版本上继续开发，先建分支
 git switch -c fix/old-release
 ```
 
-游离状态下也能提交，但离开后没有分支名保留新提交，容易把入口弄丢。
+游离状态也能提交，但直接离开后容易丢失入口。创建分支后，HEAD 重新通过分支指向提交，原来的 main 不会因此退回旧版本。
 
-### 14. merge：把做好的功能合回来
+### 12. diff / log：两个分支，到底差在哪里
+
+想看功能分支带来了什么，先确定自己要比较文件快照，还是筛选提交。下面都从同一个分叉历史出发。
+
+![main 在 B、feature 在 D、A 是共同祖先：端点 diff 比较 B/D，三点 diff 比较 A/D，两点 log 选择 C/D。](img/tips/12-compare.webp)
+
+```sh
+git diff main feature/login       # 两个端点的快照差异
+git diff main...feature/login     # 共同祖先到 feature/login 的变化
+git log --oneline main..feature/login  # 功能分支独有的提交
+```
+
+`diff A B` 与 `diff A..B` 比较两个端点，`diff A...B` 比较共同祖先与 B，有方向性。`log A..B` 选择从 B 可达、从 A 不可达的提交；`log A...B` 选择双方独有的提交。
+
+对于线性历史 `P—A—B—C`，`A..C` 是 B、C，`A^..C` 还包含 A，前提是 A 有父提交。范围按可达关系选择，不是按日期截取。
+
+### 13. merge：把做好的功能合回来
+
+可快进时只移动 main；历史分叉时创建 M，M 的两个父提交分别来自 main 和 feature。
+
+![可快进时只移动 main；历史分叉时创建 M，M 的两个父提交分别来自 main 和 feature。](img/tips/13-merge.webp)
 
 ```sh
 git switch main
@@ -263,13 +331,13 @@ git merge feature/login
 
 方向别弄反：这是把 `feature/login` 合入当前的 `main`。如果 main 没有独立的新提交，通常可以快进，只移动分支引用；双方都有新提交时，通常会生成一个有两个父提交的 merge commit。
 
-需要保留明确的合并节点时，可以用 `git merge --no-ff feature/login`。下面把 merge、rebase 和 squash 放在同一个起点下比较：
+需要保留明确的合并节点时，可以用 `git merge --no-ff feature/login`。
 
-![同一分叉历史的三种结果：merge 生成双亲 M；rebase 把 C、D 重放为 C′、D′；squash 后提交的 S 只有 main 的前一个提交作为父提交。](img/history.png)
-
-### 15. rebase：让自己的提交接在主线后面
+### 14. rebase：把自己的提交接到主线后面
 
 功能还没发布，主线已经往前走了，可以在自己的分支上重放提交：
+
+![在 feature 上重放 C、D 得到 C′、D′；main 仍指向 B，feature 改为指向 D′。](img/tips/14-rebase.webp)
 
 ```sh
 git switch feature/login
@@ -278,9 +346,11 @@ git rebase main
 
 完成后，功能提交接在 main 后面，提交 ID 通常会变化。它适合整理自己的分支；别人已经依赖的历史，需要先协调。`main` 也需要先更新，rebase 不会自动替你获取服务器上的最新代码。
 
-### 16. squash：只想留下一个提交
+### 15. squash：合入时只留下最终结果
 
 功能分支上有很多调试、修补提交，合入主线时只想留下最终结果：
+
+![merge --squash 先准备暂存内容，commit 后生成单亲提交 S；原功能分支不变，也没有 D 到 S 的合并边。](img/tips/15-squash.webp)
 
 ```sh
 git switch main
@@ -291,9 +361,32 @@ git commit -m "Add login page"
 
 别漏掉最后的 `commit`。`--squash` 只准备工作区和暂存区，不会直接创建提交，也不记录原分支的双亲合并关系。因此 Git 不会仅凭历史认定原功能分支已经合并，后续继续整合它时要留意这一点。
 
+### 16. cherry-pick：只拿其中一个修复
+
+另一个分支上有一个修复，当前分支也需要，但不想把整个分支都合进来：
+
+![从 feature 选出修复 F，在 main 后生成 F′；其他功能提交不复制，F′ 的父提交来自当前分支。](img/tips/16-cherry-pick.webp)
+
+```sh
+git cherry-pick <commit>
+# 多个指定提交，按列出的顺序应用
+git cherry-pick <commit1> <commit2>
+```
+
+需要挑选一段线性历史时，先检查范围再执行：
+
+```sh
+git log --reverse --oneline <A>..<C>
+git cherry-pick <A>..<C>
+```
+
+这里排除 A、包含 C；分叉历史按可达关系选择，具体比较方法见前面的分支比较。挑选通常会生成新提交，而不是移动原来的提交。
+
 ### 17. 冲突：先解决文件，再继续操作
 
 先 `git status` 确认正在 merge、rebase 还是 cherry-pick，再处理文件中的冲突标记。检查结果并暂存后，选择对应的命令继续：
+
+![处理冲突标记、检查结果、暂存文件，然后继续当前操作；放弃时使用对应的 abort。](img/tips/17-conflicts.webp)
 
 ```sh
 git add -- <resolved-file>
@@ -305,26 +398,35 @@ git cherry-pick --continue
 
 决定放弃本次操作时，用对应的 `--abort`。开始合并前尽量保持工作区干净，有未提交修改时，中止操作也不保证能完整还原原状。
 
-### 18. cherry-pick：只拿其中一个修复
+## 与远程协作
 
-另一个分支上有一个修复，当前分支也需要，但不想把整个分支都合进来：
+### 18. 远程分支：接着别人的工作继续开发
 
-```sh
-git cherry-pick <commit>
-# 多个指定提交，按列出的顺序应用
-git cherry-pick <commit1> <commit2>
-```
+同事已经把功能分支推到服务器，本地却还没有这个分支。先获取远程记录，再创建自己的本地分支。
 
-对于线性历史 `P—A—B—C`，`A..C` 选择 B、C；要连 A 一起选，用 `A^..C`，前提是 A 有父提交。先看清范围，再执行：
+![远程分支、origin/feature 远程跟踪引用、本地 feature 分支分别存在，track 建立上游关系。](img/tips/18-tracking.webp)
 
 ```sh
-git log --reverse --oneline <A>..<C>
-git cherry-pick <A>..<C>
+git fetch origin
+git switch --track origin/feature/login
 ```
 
-挑选通常会生成新提交。范围按可达关系选择，不是按日期截取；遇到分叉时尤其要先检查提交列表。
+这会创建本地 `feature/login`，并把 `origin/feature/login` 设为它的上游。两者是不同的引用：本地提交会移动本地分支，fetch 更新远程跟踪引用。
+
+本地分支已经存在、只想修改上游时，单独执行：
+
+```sh
+git branch --set-upstream-to=origin/feature/login feature/login
+git branch -vv
+```
+
+上游关系为默认 pull 和 ahead/behind 提示提供依据，不表示服务器会自动接收本地的新提交。
 
 ### 19. fetch：先看看远程发生了什么
+
+fetch 后 origin/main 从 B 更新到 C，本地 main 仍在 B，工作区不变。
+
+![fetch 后 origin/main 从 B 更新到 C，本地 main 仍在 B，工作区不变。](img/tips/19-fetch.webp)
 
 ```sh
 git fetch --prune origin
@@ -335,9 +437,11 @@ git log --oneline HEAD..origin/main
 
 默认的分支配置下，`--prune` 还会清理远程已删除分支的跟踪引用，不删除你的本地开发分支，也不清理标签。配置过自定义 refspec 时，先确认清理范围。
 
-### 20. pull：分叉了，先停一下
+### 20. pull：双方都有新提交怎么办
 
 上游已配置时，日常更新推荐明确加上快进限制：
+
+![pull --ff-only 在可快进时移动本地分支；分叉时停止，不自动创建合并或重放提交。](img/tips/20-pull.webp)
 
 ```sh
 git pull --ff-only
@@ -355,6 +459,10 @@ git merge --ff-only origin/main
 
 ### 21. push：把本地提交发出去
 
+功能在本地做完了，第一次发布时可以顺手建立上游。
+
+![首次发布 feature 的提交到远程并设置上游；未提交的工作区内容不会随 push 发布。](img/tips/21-push.webp)
+
 ```sh
 git push -u origin feature/login
 # 上游建立后，在该分支继续推送
@@ -365,8 +473,11 @@ git push origin --delete feature/login
 
 `-u` 建立上游关系，后续默认推拉和 ahead/behind 提示都会用到它。推送被拒绝时，先 fetch 看看差异，不要立刻加 `--force`。
 
-<details>
-<summary>自己的已发布分支经过 rebase，确实需要更新远程历史时</summary>
+### 22. push --force-with-lease：rebase 后推送被拒绝，怎么处理
+
+自己的已发布分支经过 rebase 或 amend，常规推送可能因不再快进而拒绝。这时需要审查并明确允许的历史改写。
+
+![远程实际值等于审查过的预期值时才接受更新；不匹配时拒绝，保留服务器上的新提交。](img/tips/22-lease.webp)
 
 先确认团队允许，并检查远程已有的工作是否保留，再锁定你审查过的版本：
 
@@ -379,9 +490,11 @@ git push --force-with-lease=refs/heads/feature/login:"$expected" origin HEAD:ref
 
 只有远程仍指向 `expected` 时才接受更新。不带预期值的 lease 依赖远程跟踪引用，后台 fetch 可能削弱保护。显式预期值也只检查远程有没有变化，不检查你的新历史是否丢失改动，仍需要审查和协作。
 
-</details>
+### 23. tag：给发布版本留一个名字
 
-### 22. tag：给发布版本留个名字
+准备发布一个版本，就给这次提交留个名字，方便以后再找到它。
+
+![main 会随提交向前移动，v1.0.0 标签留在发布提交；标签需要明确推送。](img/tips/23-tags.webp)
 
 ```sh
 git tag -a v1.0.0 -m "Release 1.0.0"
@@ -397,32 +510,48 @@ git tag -d v1.0.0
 git push origin --delete tag v1.0.0
 ```
 
-### 23. restore：取消暂存和丢弃修改要分清
+## 撤销与补救
 
-文件 add 多了，和文件改错了，是两件事：
+### 24. restore --staged：add 多了，怎么取消暂存
+
+文件 add 多了，只想重新选择提交内容，不需要把工作区修改一起撤掉。
+
+![取消暂存前 HEAD=v1、暂存区=v2、工作区=v3；之后只有暂存区改为 v1，工作区仍为 v3。](img/tips/24-unstage.webp)
 
 ```sh
-# 取消暂存：默认从 HEAD 恢复暂存区，工作区不变
 git restore --staged -- README.md
-# 丢弃未暂存的修改：默认从暂存区覆盖工作区
+```
+
+默认从 HEAD 恢复暂存区，工作区保持原样。一个新文件取消暂存后可能回到未跟踪状态，文件仍留在本地。
+
+仓库还没有首次提交时不存在 HEAD，新加文件可用 `git rm --cached -- <file>` 取消跟踪并保留工作区。
+
+### 25. restore：文件改错了，怎么恢复
+
+确定不需要某文件未暂存的修改时，可以从暂存区覆盖工作区。先看 diff，再执行。
+
+![普通 restore 前 HEAD=v1、暂存区=v2、工作区=v3；之后工作区变为 v2，未暂存的 v3 修改丢失。](img/tips/25-restore.webp)
+
+```sh
+git diff -- README.md
 git restore -- README.md
 ```
 
-第二条会丢失未暂存的修改。Git 通常救不回从未暂存或提交的文本，执行前先看 `diff`。这里的 `--` 把文件路径和选项分开。
+默认来源是暂存区，不一定是最后一次提交。Git 通常救不回从未暂存或提交的文本，覆盖前先保存仍需要的内容。这里的 `--` 把文件路径与选项分开。
 
-也可以从指定提交取回文件，默认只改工作区，确认后仍需 add、commit：
+想从指定提交取回文件，默认只改工作区，确认后仍需 add、commit：
 
 ```sh
 git restore --source=<commit> -- README.md
-# 让暂存区和工作区都回到 HEAD，会丢弃该文件所有未提交修改
+# 以下会丢弃该文件所有未提交修改，同时覆盖暂存区与工作区
 git restore --source=HEAD --staged --worktree -- README.md
 ```
 
-仓库尚无首次提交时，没有 HEAD，新加文件可以用 `git rm --cached -- <file>` 取消跟踪并保留工作区文件。
-
-### 24. stash：没做完的活，先存一下
+### 26. stash：没做完的工作，先存一下
 
 临时切去修 bug，又不想提交半成品：
+
+![stash 临时保存修改；apply 取回内容时保留 stash 记录，确认恢复正确后再 drop。](img/tips/26-stash.webp)
 
 ```sh
 git stash push -u -m "WIP: login form"
@@ -455,9 +584,29 @@ git stash import FETCH_HEAD
 
 </details>
 
-### 25. revert：已经推送的提交怎么撤销
+### 27. reset：退回本地提交，重新组织修改
+
+想退回自己的本地提交，重新选择内容或调整提交方式时，用 reset。它没有被 restore 替代：这里要调整的是提交位置。
+
+![目标是 B：soft 保留暂存区和工作区，mixed 重置暂存区，hard 连工作区也覆盖。](img/tips/27-reset.webp)
+
+假设已经有提交，且没有未解决的冲突：
+
+| 命令 | 当前分支 | 暂存区 | 工作区 |
+|---|---|---|---|
+| `git reset --soft <commit>` | 移到目标提交 | 不变 | 不变 |
+| `git reset --mixed <commit>` | 移到目标提交 | 恢复成目标快照 | 不变 |
+| `git reset --hard <commit>` | 移到目标提交 | 恢复成目标快照 | 覆盖为目标快照 |
+
+想退回本地提交、重新组织内容时，通常选 soft 或默认的 mixed。hard 还会丢弃工作区修改，别把它当作普通的“更新代码”。
+
+`--hard` 不会普遍删除所有未跟踪文件，但会删除阻碍写入目标文件的未跟踪文件或目录。共享历史通常用 revert，reset 适合明确允许重写的本地历史。detached HEAD 下移动的是 HEAD 本身。
+
+### 28. revert：已分享的提交，怎么撤销改动
 
 提交已经被别人拉走，通常用一个新的反向提交撤销改动：
+
+![撤销 C 的改动会在 C 后追加反向提交 R；原来的 C 仍然保留在历史中。](img/tips/28-revert.webp)
 
 ```sh
 git revert <commit>
@@ -475,23 +624,34 @@ git commit -m "Revert the selected changes"
 
 merge commit 还需要选择主线，例如 `git revert -m 1 <merge-commit>` 会反向应用相对第一个父提交的变化。合并关系仍在，之后再合并原分支不会简单重放已撤销的祖先提交，操作前先确认意图。
 
-### 26. reset：三个参数，影响三个地方
+### 29. 改错分支：先保留成果，再调整位置
 
-假设已经有提交，且没有未解决的冲突：
+本来准备做一个新功能，却直接在 main 上改起来了。先判断有没有提交，以及提交是否已经被别人依赖。
 
-| 命令 | 当前分支 | 暂存区 | 工作区 |
-|---|---|---|---|
-| `git reset --soft <commit>` | 移到目标提交 | 不变 | 不变 |
-| `git reset --mixed <commit>` | 移到目标提交 | 恢复成目标快照 | 不变 |
-| `git reset --hard <commit>` | 移到目标提交 | 恢复成目标快照 | 覆盖为目标快照 |
+![未提交时创建新分支携带修改；已提交但未分享时先用 feature 保留 C，再把 main 退回 B。](img/tips/29-wrong-branch.webp)
 
-想退回本地提交、重新组织内容时，通常选 soft 或默认的 mixed。hard 还会丢弃工作区修改，别把它当作普通的“更新代码”。
+还没提交、需要创建新分支时，可以把修改带到新分支：
 
-`--hard` 不会普遍删除所有未跟踪文件，但会删除阻碍写入目标文件的未跟踪文件或目录。共享历史通常用 revert，reset 适合明确允许重写的本地历史。detached HEAD 下移动的是 HEAD 本身。
+```sh
+git switch -c feature/login
+```
 
-### 27. reflog：提交找不到了，先别急着清理
+如果刚在 main 上提交了一次，**尚未分享、工作区和暂存区干净，并且 HEAD 有父提交**，可以先建立保留提交的分支，再把 main 退回去：
+
+```sh
+git status
+git branch feature/login
+git reset --keep HEAD~1
+git switch feature/login
+```
+
+这里假设新分支名还不存在。`--keep` 遇到会覆盖的本地修改会拒绝；不要为绕过检查直接换成 hard。多次提交要先核对退回位置，已共享的 main 则需要协调，通常通过 revert 撤销改动，不应直接改写共享历史。
+
+### 30. reflog：提交找不到，先找恢复入口
 
 误 reset 或删分支后，先找旧提交，再建一个救援分支，不必立刻再次覆盖工作区：
+
+![从 reflog 找到旧提交 C，创建救援分支重新指向它；恢复期间暂时不要清理对象。](img/tips/30-reflog.webp)
 
 ```sh
 git reflog --date=local
@@ -518,7 +678,11 @@ Git 平时会自动做部分维护，一般不必手动运行 `git gc`。gc 会�
 
 </details>
 
-### 28. clean：删之前，先看一眼名单
+### 31. clean：清理未跟踪文件，先看删除名单
+
+默认 clean 预览和删除未跟踪文件，已跟踪与被忽略文件保留；-x 会把忽略文件也纳入范围。
+
+![默认 clean 预览和删除未跟踪文件，已跟踪与被忽略文件保留；-x 会把忽略文件也纳入范围。](img/tips/31-clean.webp)
 
 ```sh
 git clean -nd -- build/    # 预览
@@ -529,17 +693,15 @@ git clean -fd -- build/    # 确认后删除
 
 缓存里也可能有还没备份的本地数据，别养成顺手执行 `reset --hard` 加 `clean` 的习惯。未跟踪文件通常无法从 reflog 找回。
 
-### 29. amend / rebase -i：提交前后，收拾一下
+## 偶尔用到，但值得知道
 
-刚提交就发现漏了一个文件，可以更新最后一次提交：
+### 32. rebase -i：把多个提交整理得更好读
 
-```sh
-git add -- <file>
-git commit --amend --no-edit
-# 需要一起修改提交说明时，用 git commit --amend
-```
+多个本地提交准备分享前，可以先把说明和内容整理到便于阅读的程度。以下示例要求 `HEAD~3` 存在，且这些提交允许重写。
 
-amend 会替换分支顶端的提交，ID 会变化。若要整理最近三个提交，且这些提交允许重写、`HEAD~3` 存在：
+![交互式列表中 pick A、fixup B、reword C，把 B 合入 A，并为 C 修改说明，得到新的提交序列。](img/tips/32-interactive-rebase.webp)
+
+整理最近三个提交：
 
 ```sh
 git branch backup/before-rebase
@@ -550,9 +712,25 @@ git rebase -i HEAD~3
 
 换基点时可用 `git rebase --onto main old-base topic`：选择 topic 中不属于 old-base 历史的提交，在 main 后重放，并更新 topic。合并、重复补丁和空提交还会受到 rebase 处理规则影响，不是简单按两个端点复制。
 
-### 30. worktree：两个任务，两个工作目录
+<details>
+<summary>把一个小修复自动合回之前的提交</summary>
+
+已暂存的小修复可以标记给某个提交，再用 autosquash 排到对应位置。这里要求目标提交有父提交，且整段历史允许重写：
+
+```sh
+git commit --fixup=<commit>
+git rebase -i --autosquash <commit>^
+```
+
+在 todo 列表里确认安排后再继续；发生冲突时仍需手动处理。
+
+</details>
+
+### 33. worktree：两个任务，两个工作目录
 
 不用为了修一个紧急问题，把手头的工作来回 stash：
+
+![两个工作目录各有工作区、暂存区和 HEAD，共享仓库对象及分支引用。](img/tips/33-worktree.webp)
 
 ```sh
 git worktree add -b fix/urgent ../project-urgent main
@@ -571,7 +749,11 @@ git worktree add --orphan -b site ../project-site
 
 目录初始没有已跟踪文件，首次提交会成为新的根提交。
 
-### 31. grep / blame：这段代码从哪来的
+### 34. grep / blame：这段代码从哪里来
+
+先搜索内容，再追踪行来源，最后看提交上下文，通常比直接根据作者姓名判断问题更有用。
+
+![grep 定位匹配行，blame 找到相关提交，再用 show 看补丁；最后修改者不一定是问题引入者。](img/tips/34-grep-blame.webp)
 
 ```sh
 git grep -n -e "TODO" -- src/
@@ -582,9 +764,11 @@ git log -p -- src/app.js
 
 `grep` 默认搜索已跟踪文件，也能查历史提交；`blame` 显示每行最后一次相关修改。别只看作者姓名就下结论，跟进提交补丁和上下文，才能知道当时为什么那样改。
 
-### 32. bisect：让 Git 帮你找出坏提交
+### 35. bisect：让 Git 找出引入 bug 的提交
 
 已知一个正常版本和一个错误版本，Git 可以逐步检出中间版本，你只需测试并反馈好坏：
+
+![从已知正常与错误版本之间逐步测试，缩小到首次出现问题的提交。](img/tips/35-bisect.webp)
 
 ```sh
 git bisect start
@@ -601,9 +785,11 @@ git bisect reset
 
 工作区先保持干净。检查可以自动化时，用 `git bisect run ./test-regression.sh`：返回 0 表示正常，1～127（125 除外）表示错误，125 表示跳过，其他返回值中止查找。注意测试程序是否真的在检测这个 bug，别把缺少构建工具当成代码有问题。
 
-### 33. submodule：仓库里面还有一个仓库
+### 36. submodule：仓库里面，还有一个仓库
 
 主仓库记录子模块的提交 ID 和 `.gitmodules` 配置。克隆时一次取全，或者在已有仓库里补初始化：
+
+![主仓库记录子模块的具体提交 ID，子模块出现新提交不会自动更新父仓库指针。](img/tips/36-submodule.webp)
 
 ```sh
 git clone --recurse-submodules <url> project
@@ -664,7 +850,7 @@ git config set --global alias.unstage "restore --staged"
 
 把常用的 24 条命令放在一张图里，方便需要时翻出来看。完整解释和边界情况见对应的 tip。
 
-![Git tips 日常速查：查看、提交、分支、远程协作、临时保存和撤销恢复，标明覆盖修改及改写历史的操作。](img/cheatsheet.png)
+![Git tips 日常速查：查看、提交、分支、远程协作、临时保存和撤销恢复，标明覆盖修改及改写历史的操作。](img/cheatsheet.webp)
 
 ## 参考资料
 
@@ -676,6 +862,7 @@ git config set --global alias.unstage "restore --staged"
 - [git-restore](https://git-scm.com/docs/git-restore)、[git-reset](https://git-scm.com/docs/git-reset)、[git-revert](https://git-scm.com/docs/git-revert)、[git-stash](https://git-scm.com/docs/git-stash)：撤销、恢复和临时保存。
 - [git-merge](https://git-scm.com/docs/git-merge)、[git-rebase](https://git-scm.com/docs/git-rebase)、[git-push](https://git-scm.com/docs/git-push)：整合与发布历史。
 - [gitignore](https://git-scm.com/docs/gitignore)：忽略规则。
+- [git-switch](https://git-scm.com/docs/git-switch)、[git-branch](https://git-scm.com/docs/git-branch)：切换分支与上游关系。
 - [git-worktree](https://git-scm.com/docs/git-worktree)：多个工作目录。
 - [git-bisect](https://git-scm.com/docs/git-bisect)：二分排错。
 - [git-submodule](https://git-scm.com/docs/git-submodule)：子模块。
