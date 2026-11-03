@@ -882,6 +882,23 @@ git config set --global alias.unstage "restore --staged"
 
 `clb` 后接分支名和地址，`cld` 后接深度和地址。`shsa "说明"` 保存当前进度，`shsak "说明"` 保留暂存内容供测试。`sl`、`slsn` 后加 `HEAD` 查看当前历史；`lgga --all` 显示所有分支。
 
+常用写法：
+
+```sh
+git cfget user.email
+git cfset --local user.email "you@company.example"
+git swc feature/login
+git swt origin/feature/login
+git unstage -- README.md
+git re -- README.md             # 丢弃该文件未暂存的修改
+git res HEAD~1 -- README.md     # 用指定提交覆盖工作区文件
+git wta -b fix/urgent ../project-urgent main
+# 已暂存修复，目标提交有父提交，且这段历史允许重写
+git cmf <commit>
+git rbif <commit>^
+git smu
+```
+
 ```gitconfig
 [alias]
 
@@ -891,18 +908,27 @@ git config set --global alias.unstage "restore --staged"
     clb = clone --single-branch --branch
     cld = clone --depth
     cf = config
+    cfget = config get
+    cfset = config set
+    cfunset = config unset
+    cfo = config list --show-origin --show-scope
     cfl = config list
     cfg = config set --global
     cfgl = config list --global
     cfs = config set --system
     cfsl = config list --system
+    ig = check-ignore -v
 
     # 查看状态、差异和历史
     st = status --show-stash
+    stb = status -sb
+    stz = status --porcelain=v1 -z
     sti = status --ignored --show-stash
     df = diff
     dfc = diff --cached
     dfh = diff HEAD
+    dfs = diff --stat
+    dfck = diff --cached --check
     lg = log
     lgo = log --oneline
     lgga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
@@ -928,12 +954,19 @@ git config set --global alias.unstage "restore --staged"
     cmme = commit -s --allow-empty -m
     cma = commit -s --amend
     cman = commit -s --amend --no-edit
+    cmf = commit --fixup
     rmc = rm --cached
 
     # 分支与整合
     br = branch -vv
     bra = branch -a
     brm = branch -m
+    brdel = branch -d
+    bru = branch --set-upstream-to
+    sw = switch
+    swc = switch -c
+    swd = switch --detach
+    swt = switch --track
     co = checkout
     cob = checkout -b
     coo = checkout --orphan
@@ -941,10 +974,13 @@ git config set --global alias.unstage "restore --staged"
     mea = merge --abort
     mec = merge --continue
     men = merge --no-ff
+    meff = merge --ff-only
+    mes = merge --squash
     rb = rebase
     rba = rebase --abort
     rbc = rebase --continue
     rbi = rebase -i
+    rbif = rebase -i --autosquash
     rbo = rebase --onto
     cp = cherry-pick
     cpa = cherry-pick --abort
@@ -965,6 +1001,7 @@ git config set --global alias.unstage "restore --staged"
     rtv = remote -v
     fh = fetch
     fha = fetch --all
+    fhp = fetch --prune
     pl = pull --ff-only
     plr = pull --rebase
     ps = push
@@ -988,6 +1025,12 @@ git config set --global alias.unstage "restore --staged"
     rs = reset
     rse = reset HEAD
     rss = reset --soft
+    rsk = reset --keep
+    unstage = restore --staged
+    # 从暂存区覆盖指定文件的未暂存修改
+    re = restore
+    # 后接来源提交与文件路径，同样会覆盖工作区文件
+    res = restore --source
     rv = revert
     rva = revert --abort
     rvc = revert --continue
@@ -999,15 +1042,19 @@ git config set --global alias.unstage "restore --staged"
     bsb = bisect bad
     bsg = bisect good
     bsr = bisect reset
+    bsk = bisect skip
+    bsrun = bisect run
 
-    # switch / restore 与 worktree
-    sw = switch
-    swc = switch -c
-    unstage = restore --staged
+    # worktree 与子模块
     wt = worktree
     wta = worktree add
     wtl = worktree list
     wtr = worktree remove
+    wtpn = worktree prune --dry-run
+    wtp = worktree prune
+    sm = submodule
+    sma = submodule add
+    smu = submodule update --init --recursive
 
     # 强制与批量操作：执行前确认影响范围
     # 强制删除分支，跳过合并检查
