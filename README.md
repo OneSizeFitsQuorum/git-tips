@@ -560,16 +560,16 @@ git push origin --delete feature/login
 
 ![远程实际值等于审查过的预期值时才接受更新；不匹配时拒绝，保留服务器上的新提交。](img/tips/22-lease.webp)
 
-先确认团队允许，并检查远程已有的工作是否保留，再锁定你审查过的版本：
+先固定远程提交 ID，再用这个 ID 检查远程已有的工作是否保留。确认后，将同一个 ID 用作推送的预期值：
 
 ```sh
 git fetch origin
-git log --oneline --left-right HEAD...origin/feature/login
 expected=$(git rev-parse refs/remotes/origin/feature/login)
+git log --oneline --left-right HEAD..."$expected"
 git push --force-with-lease=refs/heads/feature/login:"$expected" origin HEAD:refs/heads/feature/login
 ```
 
-只有远程仍指向 `expected` 时才接受更新。不带预期值的 lease 依赖远程跟踪引用，后台 fetch 可能削弱保护。显式预期值也只检查远程有没有变化，不检查你的新历史是否丢失改动，仍需要审查和协作。
+只有远程仍指向 `expected` 时才接受更新。审查后不要重新读取跟踪引用来更新 `expected`；后台 fetch 即使更新了跟踪引用，也不会改变已保存的值。不带预期值的 lease 依赖远程跟踪引用，后台 fetch 可能削弱保护。显式预期值也只检查远程有没有变化，不检查你的新历史是否丢失改动，仍需要审查和协作。
 
 ### 24. tag：给发布版本留一个名字
 
