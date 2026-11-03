@@ -878,26 +878,24 @@ git config set --global alias.unstage "restore --staged"
 
 `--global` 对当前用户生效，只想在本仓库试用就改用 `--local`。删除某项用 `git config unset --global alias.sw`。下面的配置按需合入用户 Git 配置的 `[alias]` 段，保留文件里的其他内容；不要直接粘贴到 shell 执行。
 
-`aa` 暂存整个仓库，`ap` 逐块选择修改。`cmm "说明"` 提交暂存内容并添加 Signed-off-by；项目不要求贡献声明时，用 `cm -m "说明"`。`pl` 只允许快进，分叉后需要自行选择合并或变基。
+参数直接接在 alias 后面，例如 `git sw main`、`git cfset --local user.email "you@company.example"`。脚本和 Agent 指令建议使用正文中的完整命令，避免依赖某台机器上的 alias 配置。
 
-`clb` 后接分支名和地址，`cld` 后接深度和地址。`shsa "说明"` 保存当前进度，`sh --keep-index` 保留暂存内容供测试。`slsn HEAD` 汇总当前历史的贡献者；`lgga --all` 显示所有分支。
+| 操作 | 用法 |
+|---|---|
+| 设置当前仓库的邮箱 | `git cfset --local user.email "you@company.example"` |
+| 逐块暂存并检查提交内容 | `git ap`，然后 `git dfc` 和 `git dfck` |
+| 提交暂存内容 | `git cmm "Fix login redirect"`；项目要求 Signed-off-by 时加 `-s` |
+| 创建分支 / 跟踪远程分支 | `git swc feature/login` / `git swt origin/feature/login` |
+| 取消文件暂存，保留工作区修改 | `git unstage -- README.md` |
+| 丢弃文件未暂存的修改 | `git re -- README.md` |
+| 从指定提交取回文件到工作区 | `git res HEAD~1 -- README.md`，会覆盖该文件的工作区内容 |
+| 创建独立任务目录 | `git wta -b fix/urgent ../project-urgent main` |
+| 保存包含新文件的工作进度 | `git shu -m "WIP: login"` |
+| 初始化并取回子模块 | `git smu` |
 
-常用写法：
+`aa` 暂存整个仓库，`au` 只处理已跟踪文件。`cma`、`cman` 改写最后一次提交，使用前先暂存要补交的内容；`cman` 保留提交说明。`cmf <commit>` 为已暂存的修复创建 fixup 提交，再用 `rbif <commit>^` 整理；目标提交需有父提交，整段历史也必须允许重写。
 
-```sh
-git cfget user.email
-git cfset --local user.email "you@company.example"
-git swc feature/login
-git swt origin/feature/login
-git unstage -- README.md
-git re -- README.md             # 丢弃该文件未暂存的修改
-git res HEAD~1 -- README.md     # 用指定提交覆盖工作区文件
-git wta -b fix/urgent ../project-urgent main
-# 已暂存修复，目标提交有父提交，且这段历史允许重写
-git cmf <commit>
-git rbif <commit>^
-git smu
-```
+`clb` 后接分支名和地址，`cld` 后接深度和地址。`sh --keep-index` 保留暂存内容供测试。`slsn HEAD` 汇总当前历史的贡献者，`lgga` 显示所有分支的提交图。`pl` 只允许快进，分叉后需要自行选择合并或变基。
 
 ```gitconfig
 [alias]
@@ -926,7 +924,7 @@ git smu
     dfck = diff --cached --check
     lg = log
     lgo = log --oneline
-    lgga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+    lgga = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --all
     lgge = log --grep
     lgs = log -S
     so = show
@@ -942,9 +940,9 @@ git smu
     au = add -u
     ap = add -p
     cm = commit
-    cmm = commit -s -m
-    cma = commit -s --amend
-    cman = commit -s --amend --no-edit
+    cmm = commit -m
+    cma = commit --amend
+    cman = commit --amend --no-edit
     cmf = commit --fixup
     rmc = rm --cached
 
@@ -974,6 +972,15 @@ git smu
     cpa = cherry-pick --abort
     cpc = cherry-pick --continue
 
+    # worktree 与子模块
+    wt = worktree
+    wta = worktree add
+    wtl = worktree list
+    wtr = worktree remove
+    sm = submodule
+    sma = submodule add
+    smu = submodule update --init --recursive
+
     # 远程与标签
     rt = remote
     rta = remote add
@@ -993,7 +1000,7 @@ git smu
     tga = tag -a
     tgd = tag -d
 
-    # 临时保存、撤销与排错
+    # 临时保存
     sh = stash push
     shu = stash push -u
     sha = stash apply
@@ -1002,6 +1009,8 @@ git smu
     shp = stash pop
     shshp = stash show -p
     shsa = stash push -m
+
+    # 撤销与恢复
     rs = reset
     rss = reset --soft
     rsk = reset --keep
@@ -1014,25 +1023,18 @@ git smu
     rva = revert --abort
     rvc = revert --continue
     rvn = revert --no-commit
+
+    # 清理与排错
     cn = clean
-    cnn = clean -n
+    cnn = clean -nd
     bs = bisect
     bss = bisect start
     bsb = bisect bad
     bsg = bisect good
     bsr = bisect reset
-
-    # worktree 与子模块
-    wt = worktree
-    wta = worktree add
-    wtl = worktree list
-    wtr = worktree remove
-    sm = submodule
-    sma = submodule add
-    smu = submodule update --init --recursive
 ```
 
-清理文件先用 `cnn` 预览。强制删除、覆盖整个工作区、清空 stash 和改写远程历史时，使用正文中的完整命令，确认参数和影响范围。
+清理文件和目录先用 `cnn` 预览，它默认保留被忽略的文件。强制删除、覆盖整个工作区、清空 stash 和改写远程历史时，使用正文中的完整命令，确认参数和影响范围。
 
 ## 参考资料
 
