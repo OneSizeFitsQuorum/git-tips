@@ -878,20 +878,9 @@ git config set --global alias.unstage "restore --staged"
 
 `--global` 对当前用户生效，只想在本仓库试用就改用 `--local`。删除某项用 `git config unset --global alias.sw`。下面的配置按需合入用户 Git 配置的 `[alias]` 段，保留文件里的其他内容；不要直接粘贴到 shell 执行。
 
-原版缩写全部保留，强制操作和批量操作放在后面的可选配置里。几处写法有调整，迁移时留意：
+`aa` 暂存整个仓库，`ap` 逐块选择修改。`cmm "说明"` 提交暂存内容并添加 Signed-off-by；项目不要求贡献声明时，用 `cm -m "说明"`。`pl` 只允许快进，分叉后需要自行选择合并或变基。
 
-| alias | 处理方式与用法 |
-|---|---|
-| `sti` | 修正为 `status --ignored --show-stash`，原来的命令和参数都有拼写错误。 |
-| `pl` | 改为 `pull --ff-only`，双方分叉时停止；明确要变基时仍用 `plr`。 |
-| `shsa`、`shsak` | 改用 `stash push -m` 和 `stash push --keep-index -m`，例如 `git shsa "WIP: login"`；说明里有空格要加引号。 |
-| `cfl`、`cfgl`、`cfsl` | 改用 `config list` 子命令，作用域不变。 |
-| `cmm`、`cmme`、`cma`、`cman` | 保留原来的 `-s`，会添加 Signed-off-by，适用于项目要求贡献声明的场合。普通提交用 `cm`；这些别名不会自动暂存文件。 |
-| `co`、`cob`、`coo` | 保留 checkout 用法；切换分支也可用 `sw`、`swc`。`coo` 保留 checkout 创建 orphan 分支时的文件行为。 |
-| `rse` | 保留 `reset HEAD`，默认取消全部暂存；`unstage` 使用 `restore --staged`，需传文件路径或 `.`。 |
-| `lgga` | 恢复彩色图、作者和相对时间格式；需要看全部分支时加 `--all`。 |
-
-`aa` 暂存整个仓库，`au` 只暂存已跟踪文件的修改和删除。`ae` 手工编辑补丁，`ap` 逐块选择。`clb` 后接分支名和地址，`cld` 后接深度和地址，例如 `git cld 10 <url>`。`sl`、`slsn` 后加 `HEAD` 查看当前历史，避免无参数时等待标准输入。`cfg`、`cfs` 保留旧式配置语法，设置时分别影响用户和系统范围。
+`clb` 后接分支名和地址，`cld` 后接深度和地址。`shsa "说明"` 保存当前进度，`shsak "说明"` 保留暂存内容供测试。`sl`、`slsn` 后加 `HEAD` 查看当前历史；`lgga --all` 显示所有分支。
 
 ```gitconfig
 [alias]
@@ -903,9 +892,9 @@ git config set --global alias.unstage "restore --staged"
     cld = clone --depth
     cf = config
     cfl = config list
-    cfg = config --global
+    cfg = config set --global
     cfgl = config list --global
-    cfs = config --system
+    cfs = config set --system
     cfsl = config list --system
 
     # 查看状态、差异和历史
@@ -985,9 +974,9 @@ git config set --global alias.unstage "restore --staged"
     tgd = tag -d
 
     # 临时保存、撤销与排错
-    sh = stash
-    shu = stash -u
-    shk = stash --keep-index
+    sh = stash push
+    shu = stash push -u
+    shk = stash push --keep-index
     sha = stash apply
     shd = stash drop
     shl = stash list
@@ -1019,15 +1008,8 @@ git config set --global alias.unstage "restore --staged"
     wta = worktree add
     wtl = worktree list
     wtr = worktree remove
-```
 
-<details>
-<summary>可选：强制操作与批量操作的原版缩写</summary>
-
-这些缩写保留原有含义，按需选用。删除前用 `cnn` 或完整的 `git clean -ndx` 预览；恢复文件、reset 和强制删除分支前，先检查仍需保留的修改与提交。`shc` 会清空所有 worktree 共享的 stash 列表。
-
-```gitconfig
-[alias]
+    # 强制与批量操作：执行前确认影响范围
     # 强制删除分支，跳过合并检查
     brd = branch -D
     # 强制移动分支引用
@@ -1062,9 +1044,9 @@ git config set --global alias.unstage "restore --staged"
     shc = stash clear
 ```
 
-`psf` 保留不带显式预期值的 lease，不能保证你审查过远程的新提交。有后台 fetch 或多 Agent 协作时，按[改写历史后的推送](#23-push---force-with-leaserebase-后推送被拒绝怎么处理)使用完整命令锁定预期值。`pst` 会发布所有本地标签，日常发布也可以用 `git ps origin <tag>` 指定一个。
+删除前用 `cnn` 或 `git clean -ndx` 预览。`rsh` 会覆盖未提交修改，`shc` 会清空所有 worktree 共享的 stash 列表。
 
-</details>
+`psf` 使用不带显式预期值的 lease，不能保证你审查过远程的新提交。有后台 fetch 或多 Agent 协作时，按[改写历史后的推送](#23-push---force-with-leaserebase-后推送被拒绝怎么处理)使用完整命令锁定预期值。`pst` 会发布所有本地标签，日常发布也可以用 `git ps origin <tag>` 指定一个。
 
 ## 参考资料
 
