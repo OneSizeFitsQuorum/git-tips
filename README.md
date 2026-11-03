@@ -880,7 +880,7 @@ git config set --global alias.unstage "restore --staged"
 
 `aa` 暂存整个仓库，`ap` 逐块选择修改。`cmm "说明"` 提交暂存内容并添加 Signed-off-by；项目不要求贡献声明时，用 `cm -m "说明"`。`pl` 只允许快进，分叉后需要自行选择合并或变基。
 
-`clb` 后接分支名和地址，`cld` 后接深度和地址。`shsa "说明"` 保存当前进度，`shsak "说明"` 保留暂存内容供测试。`sl`、`slsn` 后加 `HEAD` 查看当前历史；`lgga --all` 显示所有分支。
+`clb` 后接分支名和地址，`cld` 后接深度和地址。`shsa "说明"` 保存当前进度，`sh --keep-index` 保留暂存内容供测试。`slsn HEAD` 汇总当前历史的贡献者；`lgga --all` 显示所有分支。
 
 常用写法：
 
@@ -913,16 +913,11 @@ git smu
     cfunset = config unset
     cfo = config list --show-origin --show-scope
     cfl = config list
-    cfg = config set --global
-    cfgl = config list --global
-    cfs = config set --system
-    cfsl = config list --system
     ig = check-ignore -v
 
     # 查看状态、差异和历史
     st = status --show-stash
     stb = status -sb
-    stz = status --porcelain=v1 -z
     sti = status --ignored --show-stash
     df = diff
     dfc = diff --cached
@@ -935,10 +930,8 @@ git smu
     lgge = log --grep
     lgs = log -S
     so = show
-    sl = shortlog
     slsn = shortlog -s -n
     ge = grep -n
-    gec = grep -c
     bm = blame
     rf = reflog
     fc = fsck
@@ -947,11 +940,9 @@ git smu
     a = add
     aa = add -A
     au = add -u
-    ae = add -e
     ap = add -p
     cm = commit
     cmm = commit -s -m
-    cmme = commit -s --allow-empty -m
     cma = commit -s --amend
     cman = commit -s --amend --no-edit
     cmf = commit --fixup
@@ -967,9 +958,6 @@ git smu
     swc = switch -c
     swd = switch --detach
     swt = switch --track
-    co = checkout
-    cob = checkout -b
-    coo = checkout --orphan
     me = merge
     mea = merge --abort
     mec = merge --continue
@@ -989,15 +977,10 @@ git smu
     # 远程与标签
     rt = remote
     rta = remote add
-    rtp = remote prune
-    rtpd = remote prune --dry-run
     rtrm = remote remove
     rtrn = remote rename
     rtsu = remote set-url
-    rtsua = remote set-url --add
-    rtsud = remote set-url --delete
     rts = remote show
-    rtu = remote update
     rtv = remote -v
     fh = fetch
     fha = fetch --all
@@ -1013,17 +996,13 @@ git smu
     # 临时保存、撤销与排错
     sh = stash push
     shu = stash push -u
-    shk = stash push --keep-index
     sha = stash apply
     shd = stash drop
     shl = stash list
     shp = stash pop
-    shsh = stash show
     shshp = stash show -p
     shsa = stash push -m
-    shsak = stash push --keep-index -m
     rs = reset
-    rse = reset HEAD
     rss = reset --soft
     rsk = reset --keep
     unstage = restore --staged
@@ -1042,58 +1021,18 @@ git smu
     bsb = bisect bad
     bsg = bisect good
     bsr = bisect reset
-    bsk = bisect skip
-    bsrun = bisect run
 
     # worktree 与子模块
     wt = worktree
     wta = worktree add
     wtl = worktree list
     wtr = worktree remove
-    wtpn = worktree prune --dry-run
-    wtp = worktree prune
     sm = submodule
     sma = submodule add
     smu = submodule update --init --recursive
-
-    # 强制与批量操作：执行前确认影响范围
-    # 强制删除分支，跳过合并检查
-    brd = branch -D
-    # 强制移动分支引用
-    brf = branch -f
-    # 删除未跟踪文件
-    cnf = clean -f
-    # 连忽略文件一起删除
-    cnfx = clean -fx
-    # 连未跟踪目录一起删除
-    cndf = clean -df
-    # 删除未跟踪及忽略的文件和目录
-    cndfx = clean -dfx
-    # 从暂存区覆盖指定文件
-    cod = checkout --
-    # 覆盖当前目录及子目录的已跟踪文件
-    coda = checkout .
-    # 允许覆盖目标文件
-    mvf = mv -f
-    # 依赖远程跟踪引用，后台 fetch 可能削弱保护
-    psf = push --force-with-lease
-    # 推送所有本地标签
-    pst = push --tags
-    # 停止跟踪当前目录下的全部已跟踪文件
-    rmca = rm --cached -r .
-    # 强制删除文件
-    rmf = rm -f
-    # 强制删除当前目录下的已跟踪文件和目录
-    rmfa = rm -f -r .
-    # 覆盖暂存区和工作区
-    rsh = reset --hard
-    # 删除全部 stash 记录
-    shc = stash clear
 ```
 
-删除前用 `cnn` 或 `git clean -ndx` 预览。`rsh` 会覆盖未提交修改，`shc` 会清空所有 worktree 共享的 stash 列表。
-
-`psf` 使用不带显式预期值的 lease，不能保证你审查过远程的新提交。有后台 fetch 或多 Agent 协作时，按[改写历史后的推送](#23-push---force-with-leaserebase-后推送被拒绝怎么处理)使用完整命令锁定预期值。`pst` 会发布所有本地标签，日常发布也可以用 `git ps origin <tag>` 指定一个。
+清理文件先用 `cnn` 预览。强制删除、覆盖整个工作区、清空 stash 和改写远程历史时，使用正文中的完整命令，确认参数和影响范围。
 
 ## 参考资料
 
